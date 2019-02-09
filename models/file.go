@@ -19,6 +19,13 @@ type File struct {
 	GoogleStorage GoogleStorage `bson:"GoogleStorage"`
 	UpdatedAt   time.Time `bson:"_updatedAt"`
 	InstanceID  string    `bson:"instanceId"`
+	Identify    struct {
+		Format string
+		Size struct {
+			Width int
+			Height int
+		}
+	}
 	Etag        string
 	Token       string
 	UploadedAt  time.Time `bson:"uploadedAt"`
