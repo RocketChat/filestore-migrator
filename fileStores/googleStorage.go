@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/RocketChat/MigrateFileStore/models"
 	"golang.org/x/oauth2/google"
@@ -41,6 +42,10 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 	getCall := service.Objects.Get(g.Bucket, file.GoogleStorage.Path)
 	resp, err := getCall.Download()
 	if err != nil {
+		if strings.Contains(err.Error(), "No such object:") {
+			return "", models.ErrNotFound
+		}
+
 		return "", err
 	}
 

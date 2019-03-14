@@ -34,6 +34,9 @@ type MigrateTarget struct {
 		Region    string `yaml:"region"`
 		UseSSL    bool   `yaml:"useSSL"`
 	} `yaml:"AmazonS3"`
+	FileSystem struct {
+		Location string `yaml:"location"`
+	} `yaml:"FileSystem"`
 }
 
 func Get() *Config {

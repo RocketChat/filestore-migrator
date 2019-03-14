@@ -81,6 +81,14 @@ func MigrateFileStore(config *config.Config, storeName string) error {
 			Bucket:    config.Source.AmazonS3.Bucket,
 			UseSSL:    config.Source.AmazonS3.UseSSL,
 		}
+	case "FileSystem":
+		if config.Source.FileSystem.Location == "" {
+			return errors.New("Make sure you include all of the required options for FileSystem")
+		}
+
+		sourceStore = &fileStores.FileSystem{
+			Location: config.Source.FileSystem.Location,
+		}
 	default:
 		return errors.New("Invalid Source Type")
 	}
@@ -110,6 +118,14 @@ func MigrateFileStore(config *config.Config, storeName string) error {
 		destinationStore = &fileStores.GoogleStorage{
 			JSONKey: config.Destination.GoogleStorage.JSONKey,
 			Bucket:  config.Destination.GoogleStorage.Bucket,
+		}
+	case "FileSystem":
+		if config.Destination.FileSystem.Location == "" {
+			return errors.New("Make sure you include all of the required options for FileSystem")
+		}
+
+		sourceStore = &fileStores.FileSystem{
+			Location: config.Destination.FileSystem.Location,
 		}
 	default:
 		return errors.New("Invalid Destination Type")

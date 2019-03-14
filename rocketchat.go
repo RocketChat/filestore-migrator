@@ -69,12 +69,19 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 	fmt.Printf("Found %v files\n", len(files))
 
 	for i, file := range files {
-		fmt.Printf("[%v/%v] Downloading %s from: %s\n", i, len(files), file.Name, source.StoreType())
+		index := i + 1 // for logs
+
+		fmt.Printf("[%v/%v] Downloading %s from: %s\n", index, len(files), file.Name, source.StoreType())
+
+		if !file.Complete {
+			fmt.Printf("[%v/%v] File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
+			continue
+		}
 
 		downloadedPath, err := source.Download(fileCollection, file)
 		if err != nil {
 			if err == models.ErrNotFound {
-				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", i, len(files), file.Name)
+				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name)
 				continue
 			} else {
 				return err
@@ -98,7 +105,12 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 			objectPath = fmt.Sprintf("%s/%s/%s", uniqueId.Value, strings.ToLower(storeName), file.UserId)
 		}
 
-		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", i, len(files), destination.StoreType(), objectPath)
+		// FileSystem just dumps them in the folder based on the ID
+		if destination.StoreType() == "FileSystem" {
+			objectPath = file.ID
+		}
+
+		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", index, len(files), destination.StoreType(), objectPath)
 		err = destination.Upload(objectPath, downloadedPath, file.Type)
 		if err != nil {
 			return err
@@ -113,6 +125,7 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 			file.GoogleStorage = models.GoogleStorage{
 				Path: objectPath,
 			}
+		case "FileSystem":
 		default:
 		}
 
@@ -132,7 +145,7 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 			return err
 		}
 
-		fmt.Printf("[%v/%v] Completed Uploading %s\n", i, len(files), file.Name)
+		fmt.Printf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name)
 
 		time.Sleep(time.Second * 1)
 	}
