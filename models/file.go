@@ -19,11 +19,22 @@ type File struct {
 	GoogleStorage GoogleStorage `bson:"GoogleStorage"`
 	UpdatedAt     time.Time     `bson:"_updatedAt"`
 	InstanceID    string        `bson:"instanceId"`
-	Etag          string
-	Token         string
-	UploadedAt    time.Time `bson:"uploadedAt"`
-	Path          string
-	Url           string
+	Identify      struct {
+		Format string
+		Size   struct {
+			Width  int
+			Height int
+		}
+	}
+	Etag       string
+	Token      string
+	UploadedAt time.Time `bson:"uploadedAt"`
+	Path       string
+	Url        string
+}
+
+type GoogleStorage struct {
+	Path string
 }
 
 type AmazonS3 struct {
