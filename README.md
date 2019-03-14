@@ -5,10 +5,23 @@ Right now the only supported are from gridfs to s3
 ## Installation
 If you have go installed: `go get github.com/RocketChat/MigrateFileStore`
 
+You will need to copy the config.example.yaml to config.yaml and adjust the values
+
 Make sure you have $GOPATH/bin in your PATH and then you can run:
 
 ```
-MigrateFileStore -storeName {Uploads|Avatars} -source {GridFS} -db {db} -destination {AmazonS3} -s3Bucket {bucket} -s3Endpoint {s3 endpoint} -s3AccessId {s3 AccessId} -s3AccessKey {s3 accessKey}
+MigrateFileStore
 ```
 
-Optionally you can also specify s3 region via: `-s3Region`
+By default it migrates the Uploads store.  If you want to migrate the Avatars store you will need to use the flag:
+```
+-storeName=Avatars
+```
+
+You can also specify the config.yaml path:
+```
+-configFile=path-to-yaml.yaml
+```
+
+
+
