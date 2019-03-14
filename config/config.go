@@ -7,9 +7,9 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var Config *config
+var _config *Config
 
-type config struct {
+type Config struct {
 	Database    databaseConfig `yaml:"database"`
 	Source      MigrateTarget  `yaml:"source"`
 	Destination MigrateTarget  `yaml:"destination"`
@@ -36,7 +36,11 @@ type MigrateTarget struct {
 	} `yaml:"AmazonS3"`
 }
 
-func (c *config) Load(filePath string) error {
+func Get() *Config {
+	return _config
+}
+
+func (c *Config) Load(filePath string) error {
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
@@ -52,12 +56,12 @@ func (c *config) Load(filePath string) error {
 }
 
 //Load tries to load the configuration file
-func Load(filePath string) error {
-	Config = new(config)
+func Load(filePath string) (*Config, error) {
+	_config = new(Config)
 
-	if err := Config.Load(filePath); err != nil {
-		return err
+	if err := _config.Load(filePath); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return _config, nil
 }

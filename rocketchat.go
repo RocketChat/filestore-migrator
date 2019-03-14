@@ -30,9 +30,9 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 		return errors.New("Invalid store Name")
 	}
 
-	session, err := ConnectDB(connectionString)
+	session, err := connectDB(connectionString)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	sess := session.Copy()
@@ -46,7 +46,7 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 
 	err = settingsCollection.Find(bson.M{"_id": "uniqueID"}).One(&uniqueId)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	log.Println("uniqueId", uniqueId)
@@ -77,7 +77,7 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", i, len(files), file.Name)
 				continue
 			} else {
-				panic(err)
+				return err
 			}
 		}
 
