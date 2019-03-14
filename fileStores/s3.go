@@ -2,6 +2,8 @@ package fileStores
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/RocketChat/MigrateFileStore/models"
 	minio "github.com/minio/minio-go"
@@ -21,8 +23,30 @@ func (s *S3) StoreType() string {
 }
 
 func (s *S3) Download(fileCollection string, file models.File) (string, error) {
+	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessId, s.AccessKey, s.UseSSL, s.Region)
+	if err != nil {
+		return "", err
+	}
 
-	return "", nil
+	filePath := "files/" + file.ID
+
+	object, err := minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	f, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	defer f.Close()
+
+	if _, err = io.Copy(f, object); err != nil {
+		return "", err
+	}
+
+	return filePath, nil
 }
 
 func (s *S3) Upload(path string, filePath string, contentType string) error {

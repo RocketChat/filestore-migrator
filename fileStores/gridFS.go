@@ -32,29 +32,22 @@ func (g *GridFS) Download(fileCollection string, file models.File) (string, erro
 		return "", err
 	}
 
-	path := "files/" + file.ID
+	defer gridFile.Close()
 
-	f, err := os.Create(path)
+	filePath := "files/" + file.ID
+
+	f, err := os.Create(filePath)
 	if err != nil {
 		return "", err
 	}
 
-	_, err = io.Copy(f, gridFile)
-	if err != nil {
+	defer f.Close()
+
+	if _, err = io.Copy(f, gridFile); err != nil {
 		return "", err
 	}
 
-	err = f.Close()
-	if err != nil {
-		return "", err
-	}
-
-	err = gridFile.Close()
-	if err != nil {
-		return "", err
-	}
-
-	return path, err
+	return filePath, err
 }
 
 func (g *GridFS) Upload(path string, filePath string, contentType string) error {

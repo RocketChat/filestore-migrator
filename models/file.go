@@ -40,7 +40,3 @@ type GoogleStorage struct {
 type AmazonS3 struct {
 	Path string
 }
-
-type GoogleStorage struct {
-	Path string
-}
