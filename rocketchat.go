@@ -116,15 +116,26 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 			return err
 		}
 
+		unset := ""
+
 		switch destination.StoreType() {
 		case "AmazonS3":
 			file.AmazonS3 = models.AmazonS3{
 				Path: objectPath,
 			}
+
+			// Set to empty object so won't be saved back
+			unset = "GoogleStorage"
+			file.GoogleStorage = models.GoogleStorage{}
+
 		case "GoogleCloudStorage":
 			file.GoogleStorage = models.GoogleStorage{
 				Path: objectPath,
 			}
+
+			// Set to empty object so won't be saved back
+			unset = "AmazonS3"
+			file.AmazonS3 = models.AmazonS3{}
 		case "FileSystem":
 		default:
 		}
@@ -135,13 +146,15 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 		file.Path = ufsPath
 		file.Store = destination.StoreType() + ":" + storeName
 
-		err = collection.Update(bson.M{
-			"_id": file.ID,
-		},
-			bson.M{
-				"$set": file,
-			})
-		if err != nil {
+		update := bson.M{
+			"$set": file,
+		}
+
+		if unset != "" {
+			update["$unset"] = bson.M{unset: 1}
+		}
+
+		if err := collection.Update(bson.M{"_id": file.ID}, update); err != nil {
 			return err
 		}
 
