@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 
+	"github.com/RocketChat/MigrateFileStore/config"
 	"github.com/RocketChat/MigrateFileStore/fileStores"
 	mgo "gopkg.in/mgo.v2"
 )
@@ -13,49 +14,103 @@ var destinationStore fileStores.FileStore
 
 func main() {
 
+	configFile := flag.String("configFile", "config.yaml", "Config File full path. Defaults to current folder")
 	storeName := flag.String("storeName", "Uploads", "Store Name.  Options: (Uploads, Avatars)")
-	source := flag.String("source", "GridFS", "Source of files. Options: (GridFS)")
-	destination := flag.String("destination", "AmazonS3", "Destination of files. Options: (AmazonS3)")
-	connectionString := flag.String("connectionString", "mongodb://127.0.0.1:27017", "Mongodb connection url")
-	dbName := flag.String("db", "", "Mongo database")
-	s3_endpoint := flag.String("s3Endpoint", "", "S3 Endpoint")
-	s3_region := flag.String("s3Region", "", "S3 region")
-	s3_accessId := flag.String("s3AccessId", "", "S3 Access Id")
-	s3_accessKey := flag.String("s3AccessKey", "", "S3 Access Key")
-	s3_bucket := flag.String("s3Bucket", "", "S3 Bucket")
-	s3_ssl := flag.Bool("s3SSL", true, "s3 Use SSL")
 
 	flag.Parse()
 
-	if *connectionString == "" {
+	if err := config.Load(*configFile); err != nil {
+		panic(err)
+	}
+
+	if config.Config.Database.ConnectionString == "" {
 		log.Println("Missing connectionString for Rocket.Chat's Mongo")
 		flag.Usage()
 		return
 	}
 
-	if *dbName == "" {
+	if config.Config.Database.Database == "" {
 		log.Println("Missing db for Rocket.Chat's DB")
 		flag.Usage()
 		return
 	}
 
-	if *source != "GridFS" {
-		log.Println("Invalid Source")
-		flag.Usage()
+	log.Println(config.Config.Source.GoogleStorage.Bucket)
+
+	switch config.Config.Source.Type {
+	case "GridFS":
+		session, err := ConnectDB(config.Config.Database.ConnectionString)
+		if err != nil {
+			panic(err)
+		}
+
+		sourceStore = &fileStores.GridFS{
+			Database: config.Config.Database.Database,
+			Session:  session,
+		}
+	case "GoogleStorage":
+		if config.Config.Source.GoogleStorage.Bucket == "" || config.Config.Source.GoogleStorage.JSONKey == "" {
+			log.Println("Make sure you include all of the required options for GoogleStorage")
+			return
+		}
+
+		sourceStore = &fileStores.GoogleStorage{
+			JSONKey: config.Config.Source.GoogleStorage.JSONKey,
+			Bucket:  config.Config.Source.GoogleStorage.Bucket,
+		}
+	case "AmazonS3":
+		if config.Config.Source.AmazonS3.AccessID == "" || config.Config.Source.AmazonS3.AccessKey == "" || config.Config.Source.AmazonS3.Bucket == "" {
+			log.Println("Make sure you include all of the required options for AmazonS3")
+			return
+		}
+
+		sourceStore = &fileStores.S3{
+			Endpoint:  config.Config.Source.AmazonS3.Endpoint,
+			AccessId:  config.Config.Source.AmazonS3.AccessID,
+			AccessKey: config.Config.Source.AmazonS3.AccessKey,
+			Region:    config.Config.Source.AmazonS3.Region,
+			Bucket:    config.Config.Source.AmazonS3.Bucket,
+			UseSSL:    config.Config.Source.AmazonS3.UseSSL,
+		}
+	default:
+		log.Println("Invalid Source type")
 		return
 	}
 
-	if *destination != "AmazonS3" {
-		log.Println("Invalid Destination")
-		flag.Usage()
+	log.Println("Source store type set to: ", config.Config.Source.Type)
+
+	switch config.Config.Destination.Type {
+	case "AmazonS3":
+		if config.Config.Destination.AmazonS3.AccessID == "" || config.Config.Destination.AmazonS3.AccessKey == "" || config.Config.Destination.AmazonS3.Bucket == "" {
+			log.Println("Make sure you include all of the required options for AmazonS3")
+			return
+		}
+
+		destinationStore = &fileStores.S3{
+			Endpoint:  config.Config.Destination.AmazonS3.Endpoint,
+			AccessId:  config.Config.Destination.AmazonS3.AccessID,
+			AccessKey: config.Config.Destination.AmazonS3.AccessKey,
+			Region:    config.Config.Destination.AmazonS3.Region,
+			Bucket:    config.Config.Destination.AmazonS3.Bucket,
+			UseSSL:    config.Config.Destination.AmazonS3.UseSSL,
+		}
+
+	case "GoogleStorage":
+		if config.Config.Destination.GoogleStorage.Bucket == "" || config.Config.Destination.GoogleStorage.JSONKey == "" {
+			log.Println("Make sure you include all of the required options for AmazonS3")
+			return
+		}
+
+		destinationStore = &fileStores.GoogleStorage{
+			JSONKey: config.Config.Destination.GoogleStorage.JSONKey,
+			Bucket:  config.Config.Destination.GoogleStorage.Bucket,
+		}
+	default:
+		log.Println("Invalid Destination Type")
 		return
 	}
 
-	if *destination == "AmazonS3" && (*s3_endpoint == "" || *s3_accessId == "" || *s3_accessKey == "" || *s3_bucket == "") {
-		log.Println("Please include required options for s3")
-		flag.Usage()
-		return
-	}
+	log.Println("Destination store type set to: ", config.Config.Destination.Type)
 
 	if *storeName != "Uploads" && *storeName != "Avatars" {
 		log.Println("Invalid Store Name")
@@ -63,30 +118,13 @@ func main() {
 		return
 	}
 
-	if *source == "GridFS" {
-		session, err := ConnectDB(*connectionString)
-		if err != nil {
-			panic(err)
-		}
+	log.Println("Store: ", *storeName)
 
-		sourceStore = &fileStores.GridFS{
-			Database: *dbName,
-			Session:  session,
-		}
+	if sourceStore == nil || destinationStore == nil {
+		panic("Either source or destination store not initialized")
 	}
 
-	if *destination == "AmazonS3" {
-		destinationStore = &fileStores.S3{
-			Endpoint:  *s3_endpoint,
-			AccessId:  *s3_accessId,
-			AccessKey: *s3_accessKey,
-			Region:    *s3_region,
-			Bucket:    *s3_bucket,
-			UseSSL:    *s3_ssl,
-		}
-	}
-
-	err := Migrate(*connectionString, *dbName, sourceStore, destinationStore, *storeName)
+	err := Migrate(config.Config.Database.ConnectionString, config.Config.Database.Database, sourceStore, destinationStore, *storeName)
 	if err != nil {
 		panic(err)
 	}

@@ -55,7 +55,9 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 
 	var files []models.File
 
-	err = collection.Find(bson.M{"store": source.StoreType() + storeName}).All(&files)
+	log.Println(fileCollection, source.StoreType()+":"+storeName)
+
+	err = collection.Find(bson.M{"store": source.StoreType() + ":" + storeName}).All(&files)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return errors.New("No files found")
@@ -74,6 +76,8 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 			if err == models.ErrNotFound {
 				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", i, len(files), file.Name)
 				continue
+			} else {
+				panic(err)
 			}
 		}
 
@@ -100,8 +104,16 @@ func Migrate(connectionString string, dbName string, source fileStores.FileStore
 			return err
 		}
 
-		file.AmazonS3 = models.AmazonS3{
-			Path: objectPath,
+		switch destination.StoreType() {
+		case "AmazonS3":
+			file.AmazonS3 = models.AmazonS3{
+				Path: objectPath,
+			}
+		case "GoogleCloudStorage":
+			file.GoogleStorage = models.GoogleStorage{
+				Path: objectPath,
+			}
+		default:
 		}
 
 		ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", destination.StoreType(), storeName, file.ID, file.Name)
