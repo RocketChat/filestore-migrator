@@ -1,6 +1,12 @@
 # MigrateFileStore
 
-Right now the only supported are from gridfs to s3
+Supported store types are:
+* GridFS
+* FileSystem
+* AmazonS3
+* GoogleStorage
+
+GridFS is not supported as a target you can migrate to.
 
 ## Installation
 If you have go installed: `go get github.com/RocketChat/MigrateFileStore`
