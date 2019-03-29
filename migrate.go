@@ -1,8 +1,7 @@
-package main
+package MigrateFileStore
 
 import (
 	"errors"
-	"flag"
 	"log"
 
 	"github.com/RocketChat/MigrateFileStore/config"
@@ -13,25 +12,8 @@ import (
 var sourceStore fileStores.FileStore
 var destinationStore fileStores.FileStore
 
-func main() {
-
-	configFile := flag.String("configFile", "config.yaml", "Config File full path. Defaults to current folder")
-	storeName := flag.String("storeName", "Uploads", "Store Name.  Options: (Uploads, Avatars)")
-
-	flag.Parse()
-
-	config, err := config.Load(*configFile)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := MigrateFileStore(config, *storeName); err != nil {
-		panic(err)
-	}
-
-}
-
-func MigrateFileStore(config *config.Config, storeName string) error {
+// Start entry point for providing config to do the migration
+func Start(config *config.Config, storeName string) error {
 	if storeName != "Uploads" && storeName != "Avatars" {
 		return errors.New("Invalid Store Name")
 	}
