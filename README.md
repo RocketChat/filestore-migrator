@@ -9,7 +9,7 @@ Supported store types are:
 GridFS is not supported as a target you can migrate to.
 
 ## Installation
-If you have go installed: `go get github.com/RocketChat/MigrateFileStore`
+If you have go installed: `go get github.com/RocketChat/MigrateFileStore/cmd/...`
 
 You will need to copy the config.example.yaml to config.yaml and adjust the values
 
