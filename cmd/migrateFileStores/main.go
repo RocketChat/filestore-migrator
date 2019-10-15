@@ -11,6 +11,7 @@ func main() {
 
 	configFile := flag.String("configFile", "config.yaml", "Config File full path. Defaults to current folder")
 	storeName := flag.String("storeName", "Uploads", "Store Name.  Options: (Uploads, Avatars)")
+	skipErrors := flag.Bool("skipErrors", false, "Skip on error")
 
 	flag.Parse()
 
@@ -19,7 +20,12 @@ func main() {
 		panic(err)
 	}
 
-	if err := MigrateFileStore.Start(config, *storeName); err != nil {
+	migrate, err := MigrateFileStore.New(config, skipErrors)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := migrate.MigrateStore(*storeName); err != nil {
 		panic(err)
 	}
 

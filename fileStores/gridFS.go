@@ -10,8 +10,9 @@ import (
 )
 
 type GridFS struct {
-	Database string
-	Session  *mgo.Session
+	Database         string
+	Session          *mgo.Session
+	TempFileLocation string
 }
 
 func (g *GridFS) StoreType() string {
@@ -34,7 +35,7 @@ func (g *GridFS) Download(fileCollection string, file models.File) (string, erro
 
 	defer gridFile.Close()
 
-	filePath := "files/" + file.ID
+	filePath := g.TempFileLocation + file.ID
 
 	f, err := os.Create(filePath)
 	if err != nil {
