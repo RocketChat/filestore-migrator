@@ -31,6 +31,10 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 		return nil, errors.New("Missing db for Rocket.Chat's DB")
 	}
 
+	if config.TempFileLocation == "" {
+		config.TempFileLocation = "files"
+	}
+
 	migrate := &Migrate{
 		skipErrors:       skipErrors,
 		databaseName:     config.Database.Database,

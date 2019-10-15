@@ -36,7 +36,7 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 
 	service, err := storage.New(c)
 
-	filePath := g.TempFileLocation + file.ID
+	filePath := g.TempFileLocation + "" + file.ID
 
 	log.Println("Downloading", file.GoogleStorage.Path)
 
