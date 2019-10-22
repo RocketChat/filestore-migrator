@@ -43,6 +43,8 @@ func (m *Migrate) getFiles(storeName string) ([]models.File, error) {
 		return nil, err
 	}
 
+	m.session = session
+
 	sess := session.Copy()
 	defer sess.Close()
 
@@ -61,8 +63,6 @@ func (m *Migrate) getFiles(storeName string) ([]models.File, error) {
 	m.uniqueID = uniqueID.Value
 
 	collection := db.C(fileCollection)
-
-	m.fileCollection = collection
 
 	var files []models.File
 
@@ -140,7 +140,13 @@ func (m *Migrate) MigrateStore(storeName string) error {
 			update["$unset"] = bson.M{unset: 1}
 		}
 
-		if err := m.fileCollection.Update(bson.M{"_id": file.ID}, update); err != nil {
+		sess := m.session.Copy()
+		defer sess.Close()
+
+		db := sess.DB(m.databaseName)
+		collection := db.C(m.fileCollectionName)
+
+		if err := collection.Update(bson.M{"_id": file.ID}, update); err != nil {
 			return err
 		}
 
@@ -298,7 +304,13 @@ func (m *Migrate) UploadAll(storeName string, filesRoot string) error {
 			update["$unset"] = bson.M{unset: 1}
 		}
 
-		if err := m.fileCollection.Update(bson.M{"_id": file.ID}, update); err != nil {
+		sess := m.session.Copy()
+		defer sess.Close()
+
+		db := sess.DB(m.databaseName)
+		collection := db.C(m.fileCollectionName)
+
+		if err := collection.Update(bson.M{"_id": file.ID}, update); err != nil {
 			return err
 		}
 

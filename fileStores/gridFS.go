@@ -3,6 +3,7 @@ package fileStores
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/RocketChat/MigrateFileStore/models"
@@ -35,7 +36,9 @@ func (g *GridFS) Download(fileCollection string, file models.File) (string, erro
 
 	defer gridFile.Close()
 
-	filePath := g.TempFileLocation + "" + file.ID
+	filePath := g.TempFileLocation + "/" + file.ID
+
+	log.Println(filePath)
 
 	f, err := os.Create(filePath)
 	if err != nil {

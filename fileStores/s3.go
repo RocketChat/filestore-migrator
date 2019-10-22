@@ -29,7 +29,7 @@ func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 		return "", err
 	}
 
-	filePath := s.TempFileLocation + "" + file.ID
+	filePath := s.TempFileLocation + "/" + file.ID
 
 	object, err := minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
 	if err != nil {

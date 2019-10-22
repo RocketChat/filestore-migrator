@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/RocketChat/MigrateFileStore/config"
 	"github.com/RocketChat/MigrateFileStore/fileStores"
@@ -18,7 +19,7 @@ type Migrate struct {
 	databaseName       string
 	connectionString   string
 	fileCollectionName string
-	fileCollection     *mgo.Collection
+	session            *mgo.Session
 	uniqueID           string
 }
 
@@ -36,10 +37,12 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 		config.TempFileLocation = "files"
 	}
 
+	config.TempFileLocation = strings.TrimSuffix(config.TempFileLocation, "/")
+
 	if _, err := os.Stat(config.TempFileLocation); os.IsNotExist(err) {
-		if err := os.MkdirAll(config.TempFileLocation, 0600); err != nil {
+		if err := os.MkdirAll(config.TempFileLocation, 0777); err != nil {
 			log.Println(err)
-			return nil, errors.New("Directory doesn't exist and unable to create it")
+			return nil, errors.New("Temp Directory doesn't exist and unable to create it")
 		}
 	}
 
@@ -99,6 +102,12 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for FileSystem")
 			}
 
+			config.Source.FileSystem.Location = strings.TrimSuffix(config.Source.FileSystem.Location, "/")
+
+			if _, err := os.Stat(config.Source.FileSystem.Location); os.IsNotExist(err) {
+				return nil, errors.New("Filesystem source location does not exist or is unaccessible")
+			}
+
 			sourceStore := &fileStores.FileSystem{
 				Location:         config.Source.FileSystem.Location,
 				TempFileLocation: config.TempFileLocation,
@@ -145,6 +154,13 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 		case "FileSystem":
 			if config.Destination.FileSystem.Location == "" {
 				return nil, errors.New("Make sure you include all of the required options for FileSystem")
+			}
+
+			if _, err := os.Stat(config.Destination.FileSystem.Location); os.IsNotExist(err) {
+				if err := os.MkdirAll(config.Destination.FileSystem.Location, 0777); err != nil {
+					log.Println(err)
+					return nil, errors.New("filesystem directory doesn't exist and unable to create it")
+				}
 			}
 
 			destinationStore := &fileStores.FileSystem{

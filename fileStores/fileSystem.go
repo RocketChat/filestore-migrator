@@ -19,7 +19,7 @@ func (f *FileSystem) StoreType() string {
 func (f *FileSystem) Download(fileCollection string, file models.File) (string, error) {
 
 	sourcePath := f.Location + "/" + file.ID
-	destinationPath := f.TempFileLocation + file.ID
+	destinationPath := f.TempFileLocation + "/" + file.ID
 
 	if _, err := os.Stat(sourcePath); os.IsNotExist(err) {
 		return "", models.ErrNotFound
