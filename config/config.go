@@ -10,9 +10,10 @@ import (
 var _config *Config
 
 type Config struct {
-	Database    databaseConfig `yaml:"database"`
-	Source      MigrateTarget  `yaml:"source"`
-	Destination MigrateTarget  `yaml:"destination"`
+	Database         databaseConfig `yaml:"database"`
+	Source           MigrateTarget  `yaml:"source"`
+	Destination      MigrateTarget  `yaml:"destination"`
+	TempFileLocation string         `yaml:"tempFileLocation"`
 }
 
 type databaseConfig struct {

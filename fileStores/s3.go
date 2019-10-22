@@ -10,12 +10,13 @@ import (
 )
 
 type S3 struct {
-	Endpoint  string
-	Bucket    string
-	AccessId  string
-	AccessKey string
-	Region    string
-	UseSSL    bool
+	Endpoint         string
+	Bucket           string
+	AccessID         string
+	AccessKey        string
+	Region           string
+	UseSSL           bool
+	TempFileLocation string
 }
 
 func (s *S3) StoreType() string {
@@ -23,12 +24,12 @@ func (s *S3) StoreType() string {
 }
 
 func (s *S3) Download(fileCollection string, file models.File) (string, error) {
-	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessId, s.AccessKey, s.UseSSL, s.Region)
+	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
 		return "", err
 	}
 
-	filePath := "files/" + file.ID
+	filePath := s.TempFileLocation + "/" + file.ID
 
 	object, err := minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
 	if err != nil {
@@ -49,13 +50,13 @@ func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 	return filePath, nil
 }
 
-func (s *S3) Upload(path string, filePath string, contentType string) error {
-	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessId, s.AccessKey, s.UseSSL, s.Region)
+func (s *S3) Upload(objectPath string, filePath string, contentType string) error {
+	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
 		return err
 	}
 
-	_, err = minioClient.FPutObject(s.Bucket, path, filePath, minio.PutObjectOptions{
+	_, err = minioClient.FPutObject(s.Bucket, objectPath, filePath, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {

@@ -14,8 +14,9 @@ import (
 )
 
 type GoogleStorage struct {
-	JSONKey string
-	Bucket  string
+	JSONKey          string
+	Bucket           string
+	TempFileLocation string
 }
 
 func (g *GoogleStorage) StoreType() string {
@@ -35,7 +36,7 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 
 	service, err := storage.New(c)
 
-	filePath := "files/" + file.ID
+	filePath := g.TempFileLocation + "/" + file.ID
 
 	log.Println("Downloading", file.GoogleStorage.Path)
 

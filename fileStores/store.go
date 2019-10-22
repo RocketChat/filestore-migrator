@@ -6,6 +6,6 @@ import (
 
 type FileStore interface {
 	StoreType() string
-	Upload(path string, filePath string, contentType string) error
+	Upload(objectPath string, filePath string, contentType string) error
 	Download(fileCollection string, file models.File) (string, error)
 }
