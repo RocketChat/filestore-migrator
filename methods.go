@@ -13,21 +13,40 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type uniqueIDSetting struct {
+type rocketChatSetting struct {
 	ID    string `bson:"_id"`
 	Value string
 }
 
-func (m *Migrate) getFiles(storeName string) ([]models.File, error) {
+// SetStoreName that will be operating on
+func (m *Migrate) SetStoreName(storeName string) error {
 	if storeName != "Uploads" && storeName != "Avatars" {
-		return nil, errors.New("Invalid Store Name")
+		return errors.New("Invalid Store Name")
 	}
 
-	log.Println("Store: ", storeName)
+	m.storeName = storeName
+
+	if m.sourceStore != nil {
+		m.sourceStore.SetTempDirectory(m.tempFileLocation + "/" + strings.ToLower(storeName))
+	}
+
+	if m.destinationStore != nil {
+		m.destinationStore.SetTempDirectory(m.tempFileLocation + "/" + strings.ToLower(storeName))
+	}
+
+	return nil
+}
+
+func (m *Migrate) getFiles() ([]models.File, error) {
+	if m.storeName == "" {
+		return nil, errors.New("no store Name")
+	}
+
+	log.Println("Store: ", m.storeName)
 
 	fileCollection := ""
 
-	switch storeName {
+	switch m.storeName {
 	case "Uploads":
 		fileCollection = "rocketchat_uploads"
 	case "Avatars":
@@ -52,7 +71,7 @@ func (m *Migrate) getFiles(storeName string) ([]models.File, error) {
 
 	settingsCollection := db.C("rocketchat_settings")
 
-	var uniqueID uniqueIDSetting
+	var uniqueID rocketChatSetting
 
 	err = settingsCollection.Find(bson.M{"_id": "uniqueID"}).One(&uniqueID)
 	if err != nil {
@@ -66,9 +85,9 @@ func (m *Migrate) getFiles(storeName string) ([]models.File, error) {
 
 	var files []models.File
 
-	log.Println(fileCollection, m.sourceStore.StoreType()+":"+storeName)
+	log.Println(fileCollection, m.sourceStore.StoreType()+":"+m.storeName)
 
-	err = collection.Find(bson.M{"store": m.sourceStore.StoreType() + ":" + storeName}).All(&files)
+	err = collection.Find(bson.M{"store": m.sourceStore.StoreType() + ":" + m.storeName}).All(&files)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errors.New("No files found")
@@ -81,12 +100,12 @@ func (m *Migrate) getFiles(storeName string) ([]models.File, error) {
 }
 
 // MigrateStore migrates a filestore between source and destination
-func (m *Migrate) MigrateStore(storeName string) error {
+func (m *Migrate) MigrateStore() error {
 	if m.sourceStore == nil || m.destinationStore == nil {
 		return errors.New("For MigrateStore both a source and destionation store must be provided")
 	}
 
-	files, err := m.getFiles(storeName)
+	files, err := m.getFiles()
 	if err != nil {
 		return err
 	}
@@ -114,7 +133,7 @@ func (m *Migrate) MigrateStore(storeName string) error {
 			}
 		}
 
-		if file.Rid == "" && storeName == "Uploads" {
+		if file.Rid == "" && m.storeName == "Uploads" {
 			file.Rid = "undefined"
 		}
 
@@ -122,7 +141,7 @@ func (m *Migrate) MigrateStore(storeName string) error {
 			file.UserId = "undefined"
 		}
 
-		objectPath := m.getObjectPath(&file, storeName)
+		objectPath := m.getObjectPath(&file)
 
 		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath)
 		err = m.destinationStore.Upload(objectPath, downloadedPath, file.Type)
@@ -130,7 +149,7 @@ func (m *Migrate) MigrateStore(storeName string) error {
 			return err
 		}
 
-		unset := m.fixFileForUpload(&file, objectPath, storeName)
+		unset := m.fixFileForUpload(&file, objectPath)
 
 		update := bson.M{
 			"$set": file,
@@ -160,14 +179,14 @@ func (m *Migrate) MigrateStore(storeName string) error {
 	return nil
 }
 
-func (m *Migrate) getObjectPath(file *models.File, storeName string) string {
+func (m *Migrate) getObjectPath(file *models.File) string {
 	objectPath := ""
 
-	switch storeName {
+	switch m.storeName {
 	case "Uploads":
-		objectPath = fmt.Sprintf("%s/%s/%s/%s/%s", m.uniqueID, strings.ToLower(storeName), file.Rid, file.UserId, file.ID)
+		objectPath = fmt.Sprintf("%s/%s/%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.Rid, file.UserId, file.ID)
 	case "Avatars":
-		objectPath = fmt.Sprintf("%s/%s/%s", m.uniqueID, strings.ToLower(storeName), file.UserId)
+		objectPath = fmt.Sprintf("%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.UserId)
 	}
 
 	// FileSystem just dumps them in the folder based on the ID
@@ -178,7 +197,7 @@ func (m *Migrate) getObjectPath(file *models.File, storeName string) string {
 	return objectPath
 }
 
-func (m *Migrate) fixFileForUpload(file *models.File, objectPath string, storeName string) string {
+func (m *Migrate) fixFileForUpload(file *models.File, objectPath string) string {
 	unset := ""
 
 	switch m.destinationStore.StoreType() {
@@ -203,22 +222,22 @@ func (m *Migrate) fixFileForUpload(file *models.File, objectPath string, storeNa
 	default:
 	}
 
-	ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", m.destinationStore.StoreType(), storeName, file.ID, file.Name)
+	ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", m.destinationStore.StoreType(), m.storeName, file.ID, file.Name)
 
 	file.Url = ufsPath
 	file.Path = ufsPath
-	file.Store = m.destinationStore.StoreType() + ":" + storeName
+	file.Store = m.destinationStore.StoreType() + ":" + m.storeName
 
 	return unset
 }
 
 // DownloadAll downloads all files from a filestore
-func (m *Migrate) DownloadAll(storeName string) error {
+func (m *Migrate) DownloadAll() error {
 	if m.sourceStore == nil {
 		return errors.New("For DownloadAll must have a source store provided")
 	}
 
-	files, err := m.getFiles(storeName)
+	files, err := m.getFiles()
 	if err != nil {
 		return err
 	}
@@ -257,12 +276,12 @@ func (m *Migrate) DownloadAll(storeName string) error {
 }
 
 // UploadAll uploads all files from a filestore
-func (m *Migrate) UploadAll(storeName string, filesRoot string) error {
+func (m *Migrate) UploadAll(filesRoot string) error {
 	if m.destinationStore == nil {
 		return errors.New("For UploadAll must have a destination store provided")
 	}
 
-	files, err := m.getFiles(storeName)
+	files, err := m.getFiles()
 	if err != nil {
 		return err
 	}
@@ -286,7 +305,7 @@ func (m *Migrate) UploadAll(storeName string, filesRoot string) error {
 			continue
 		}
 
-		objectPath := m.getObjectPath(&file, storeName)
+		objectPath := m.getObjectPath(&file)
 
 		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath)
 		err = m.destinationStore.Upload(objectPath, fileLocation, file.Type)
@@ -294,7 +313,7 @@ func (m *Migrate) UploadAll(storeName string, filesRoot string) error {
 			return err
 		}
 
-		unset := m.fixFileForUpload(&file, objectPath, storeName)
+		unset := m.fixFileForUpload(&file, objectPath)
 
 		update := bson.M{
 			"$set": file,

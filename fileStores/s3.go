@@ -23,6 +23,10 @@ func (s *S3) StoreType() string {
 	return "AmazonS3"
 }
 
+func (s *S3) SetTempDirectory(dir string) {
+	s.TempFileLocation = dir
+}
+
 func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {

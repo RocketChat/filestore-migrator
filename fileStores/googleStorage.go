@@ -23,6 +23,10 @@ func (g *GoogleStorage) StoreType() string {
 	return "GoogleCloudStorage"
 }
 
+func (g *GoogleStorage) SetTempDirectory(dir string) {
+	g.TempFileLocation = dir
+}
+
 func (g *GoogleStorage) Download(fileCollection string, file models.File) (string, error) {
 
 	ctx := context.Background()

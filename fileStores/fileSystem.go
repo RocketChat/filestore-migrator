@@ -16,6 +16,10 @@ func (f *FileSystem) StoreType() string {
 	return "FileSystem"
 }
 
+func (f *FileSystem) SetTempDirectory(dir string) {
+	f.TempFileLocation = dir
+}
+
 func (f *FileSystem) Download(fileCollection string, file models.File) (string, error) {
 
 	sourcePath := f.Location + "/" + file.ID
