@@ -3,6 +3,7 @@ package MigrateFileStore
 import (
 	"errors"
 	"log"
+	"os"
 
 	"github.com/RocketChat/MigrateFileStore/config"
 	"github.com/RocketChat/MigrateFileStore/fileStores"
@@ -33,6 +34,13 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 	if config.TempFileLocation == "" {
 		config.TempFileLocation = "files"
+	}
+
+	if _, err := os.Stat(config.TempFileLocation); os.IsNotExist(err) {
+		if err := os.MkdirAll(config.TempFileLocation, 0600); err != nil {
+			log.Println(err)
+			return nil, errors.New("Directory doesn't exist and unable to create it")
+		}
 	}
 
 	migrate := &Migrate{
