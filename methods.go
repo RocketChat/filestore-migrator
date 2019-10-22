@@ -73,8 +73,7 @@ func (m *Migrate) getFiles() ([]models.File, error) {
 
 	var uniqueID rocketChatSetting
 
-	err = settingsCollection.Find(bson.M{"_id": "uniqueID"}).One(&uniqueID)
-	if err != nil {
+	if err := settingsCollection.Find(bson.M{"_id": "uniqueID"}).One(&uniqueID); err != nil {
 		return nil, err
 	}
 
@@ -87,8 +86,7 @@ func (m *Migrate) getFiles() ([]models.File, error) {
 
 	log.Println(fileCollection, m.sourceStore.StoreType()+":"+m.storeName)
 
-	err = collection.Find(bson.M{"store": m.sourceStore.StoreType() + ":" + m.storeName}).All(&files)
-	if err != nil {
+	if err := collection.Find(bson.M{"store": m.sourceStore.StoreType() + ":" + m.storeName}).All(&files); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errors.New("No files found")
 		}
@@ -144,8 +142,8 @@ func (m *Migrate) MigrateStore() error {
 		objectPath := m.getObjectPath(&file)
 
 		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath)
-		err = m.destinationStore.Upload(objectPath, downloadedPath, file.Type)
-		if err != nil {
+
+		if err := m.destinationStore.Upload(objectPath, downloadedPath, file.Type); err != nil {
 			return err
 		}
 
@@ -254,8 +252,7 @@ func (m *Migrate) DownloadAll() error {
 			continue
 		}
 
-		_, err := m.sourceStore.Download(m.fileCollectionName, file)
-		if err != nil {
+		if _, err := m.sourceStore.Download(m.fileCollectionName, file); err != nil {
 			if err == models.ErrNotFound || m.skipErrors {
 				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name)
 				err = nil
@@ -308,8 +305,7 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 		objectPath := m.getObjectPath(&file)
 
 		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath)
-		err = m.destinationStore.Upload(objectPath, fileLocation, file.Type)
-		if err != nil {
+		if err := m.destinationStore.Upload(objectPath, fileLocation, file.Type); err != nil {
 			return err
 		}
 

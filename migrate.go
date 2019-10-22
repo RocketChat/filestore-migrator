@@ -209,8 +209,7 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 
 	var fileUploadStorageType rocketChatSetting
 
-	err = settingsCollection.Find(bson.M{"_id": "FileUpload_Storage_Type"}).One(&fileUploadStorageType)
-	if err != nil {
+	if err := settingsCollection.Find(bson.M{"_id": "FileUpload_Storage_Type"}).One(&fileUploadStorageType); err != nil {
 		return nil, err
 	}
 
@@ -224,36 +223,31 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 		sourceStore.Type = "AmazonS3"
 		var awsAccessID rocketChatSetting
 
-		err = settingsCollection.Find(bson.M{"_id": "FileUpload_S3_AWSAccessKeyId"}).One(&awsAccessID)
-		if err != nil {
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_AWSAccessKeyId"}).One(&awsAccessID); err != nil {
 			return nil, err
 		}
 
 		var awsSecret rocketChatSetting
 
-		err = settingsCollection.Find(bson.M{"_id": "FileUpload_S3_AWSSecretAccessKey"}).One(&awsSecret)
-		if err != nil {
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_AWSSecretAccessKey"}).One(&awsSecret); err != nil {
 			return nil, err
 		}
 
 		var bucket rocketChatSetting
 
-		err = settingsCollection.Find(bson.M{"_id": "FileUpload_S3_Bucket"}).One(&bucket)
-		if err != nil {
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_Bucket"}).One(&bucket); err != nil {
 			return nil, err
 		}
 
 		var region rocketChatSetting
 
-		err = settingsCollection.Find(bson.M{"_id": "FileUpload_S3_Region"}).One(&region)
-		if err != nil {
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_Region"}).One(&region); err != nil {
 			return nil, err
 		}
 
 		var s3url rocketChatSetting
 
-		err = settingsCollection.Find(bson.M{"_id": "FileUpload_S3_BucketURL"}).One(&s3url)
-		if err != nil {
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_BucketURL"}).One(&s3url); err != nil {
 			return nil, err
 		}
 
@@ -277,8 +271,7 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 		sourceStore.Type = "FileSystem"
 		var filesystemLocation rocketChatSetting
 
-		err = settingsCollection.Find(bson.M{"_id": "FileUpload_FileSystemPath"}).One(&filesystemLocation)
-		if err != nil {
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_FileSystemPath"}).One(&filesystemLocation); err != nil {
 			return nil, err
 		}
 
