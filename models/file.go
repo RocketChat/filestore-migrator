@@ -2,13 +2,14 @@ package models
 
 import "time"
 
+// File represents the structure of the file in Rocket.Chats database
 type File struct {
 	ID            string `bson:"_id"`
 	Name          string
 	Size          int
 	Type          string
 	Rid           string
-	UserId        string `bson:"userId"`
+	UserID        string `bson:"userId"`
 	Description   string
 	Store         string
 	Complete      bool
@@ -30,13 +31,15 @@ type File struct {
 	Token      string
 	UploadedAt time.Time `bson:"uploadedAt"`
 	Path       string
-	Url        string
+	URL        string
 }
 
+// GoogleStorage is sub property of file
 type GoogleStorage struct {
 	Path string
 }
 
+// AmazonS3 is a sub property of file
 type AmazonS3 struct {
 	Path string
 }

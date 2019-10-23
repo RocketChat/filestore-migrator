@@ -1,4 +1,4 @@
-package fileStores
+package filestores
 
 import (
 	"io"
@@ -7,19 +7,23 @@ import (
 	"github.com/RocketChat/MigrateFileStore/models"
 )
 
+// FileSystem is the Filesystem file Store
 type FileSystem struct {
 	Location         string
 	TempFileLocation string
 }
 
+// StoreType returns the name of the store
 func (f *FileSystem) StoreType() string {
 	return "FileSystem"
 }
 
+// SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
 func (f *FileSystem) SetTempDirectory(dir string) {
 	f.TempFileLocation = dir
 }
 
+// Download will download the file to temp file store
 func (f *FileSystem) Download(fileCollection string, file models.File) (string, error) {
 
 	sourcePath := f.Location + "/" + file.ID
@@ -50,6 +54,7 @@ func (f *FileSystem) Download(fileCollection string, file models.File) (string, 
 	return destinationPath, nil
 }
 
+// Upload will upload the file from given file path
 func (f *FileSystem) Upload(path string, filePath string, contentType string) error {
 	destinationPath := f.Location + "/" + path
 

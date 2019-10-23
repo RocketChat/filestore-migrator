@@ -1,4 +1,4 @@
-package fileStores
+package filestores
 
 import (
 	"context"
@@ -13,20 +13,24 @@ import (
 	storage "google.golang.org/api/storage/v1"
 )
 
+// GoogleStorage is the google storage file store
 type GoogleStorage struct {
 	JSONKey          string
 	Bucket           string
 	TempFileLocation string
 }
 
+// StoreType returns the name of the store
 func (g *GoogleStorage) StoreType() string {
 	return "GoogleCloudStorage"
 }
 
+// SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
 func (g *GoogleStorage) SetTempDirectory(dir string) {
 	g.TempFileLocation = dir
 }
 
+// Download will download the file to temp file store
 func (g *GoogleStorage) Download(fileCollection string, file models.File) (string, error) {
 
 	ctx := context.Background()
@@ -41,8 +45,6 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 	service, err := storage.New(c)
 
 	filePath := g.TempFileLocation + "/" + file.ID
-
-	log.Println("Downloading", file.GoogleStorage.Path)
 
 	getCall := service.Objects.Get(g.Bucket, file.GoogleStorage.Path)
 	resp, err := getCall.Download()
@@ -67,11 +69,10 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 		return "", err
 	}
 
-	log.Println("Downloaded", file.GoogleStorage.Path)
-
 	return filePath, nil
 }
 
+// Upload will upload the file from given file path
 func (g *GoogleStorage) Upload(path string, filePath string, contentType string) error {
 	ctx := context.Background()
 
@@ -98,13 +99,11 @@ func (g *GoogleStorage) Upload(path string, filePath string, contentType string)
 
 	insertCall := service.Objects.Insert(g.Bucket, object).Media(file)
 
-	obj, err := insertCall.Do()
+	_, err = insertCall.Do()
 	if err != nil {
 		log.Println(err)
 		return errors.New("problem uploading file to bucket")
 	}
-
-	log.Println(obj)
 
 	return nil
 }

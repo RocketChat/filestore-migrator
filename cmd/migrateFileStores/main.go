@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/RocketChat/MigrateFileStore"
+	migratefiles "github.com/RocketChat/MigrateFileStore"
 	"github.com/RocketChat/MigrateFileStore/config"
 )
 
@@ -21,7 +21,7 @@ func main() {
 		panic(err)
 	}
 
-	migrate, err := MigrateFileStore.New(config, *skipErrors)
+	migrate, err := migratefiles.New(config, *skipErrors)
 	if err != nil {
 		panic(err)
 	}
