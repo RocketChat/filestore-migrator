@@ -9,6 +9,7 @@ source:
       {
 
       }
+tempFileLocation: "files"
 destination:
   type: "AmazonS3"
   AmazonS3:
