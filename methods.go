@@ -1,4 +1,4 @@
-package MigrateFileStore
+package migratefiles
 
 import (
 	"errors"
@@ -16,6 +16,17 @@ import (
 type rocketChatSetting struct {
 	ID    string `bson:"_id"`
 	Value string
+}
+
+// DebugMode sets debug mode on
+func (m *Migrate) DebugMode() {
+	m.debug = true
+}
+
+func (m *Migrate) debugLog(v ...interface{}) {
+	if m.debug {
+		log.Println(v)
+	}
 }
 
 // SetStoreName that will be operating on
@@ -42,7 +53,7 @@ func (m *Migrate) getFiles() ([]models.File, error) {
 		return nil, errors.New("no store Name")
 	}
 
-	log.Println("Store: ", m.storeName)
+	m.debugLog("Store: ", m.storeName)
 
 	fileCollection := ""
 
@@ -77,14 +88,14 @@ func (m *Migrate) getFiles() ([]models.File, error) {
 		return nil, err
 	}
 
-	log.Println("uniqueId", uniqueID)
+	m.debugLog("uniqueId", uniqueID)
 	m.uniqueID = uniqueID.Value
 
 	collection := db.C(fileCollection)
 
 	var files []models.File
 
-	log.Println(fileCollection, m.sourceStore.StoreType()+":"+m.storeName)
+	m.debugLog(fileCollection, m.sourceStore.StoreType()+":"+m.storeName)
 
 	if err := collection.Find(bson.M{"store": m.sourceStore.StoreType() + ":" + m.storeName}).All(&files); err != nil {
 		if err == mgo.ErrNotFound {
@@ -108,22 +119,22 @@ func (m *Migrate) MigrateStore() error {
 		return err
 	}
 
-	fmt.Printf("Found %v files\n", len(files))
+	m.debugLog(fmt.Sprintf("Found %v files\n", len(files)))
 
 	for i, file := range files {
 		index := i + 1 // for logs
 
-		fmt.Printf("[%v/%v] Downloading %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType())
+		m.debugLog(fmt.Sprintf("[%v/%v] Downloading %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
 
 		if !file.Complete {
-			fmt.Printf("[%v/%v] File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
+			m.debugLog(fmt.Sprintf("[%v/%v] File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name))
 			continue
 		}
 
 		downloadedPath, err := m.sourceStore.Download(m.fileCollectionName, file)
 		if err != nil {
 			if err == models.ErrNotFound || m.skipErrors {
-				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name)
+				m.debugLog(fmt.Sprintf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name))
 				err = nil
 				continue
 			} else {
@@ -135,13 +146,13 @@ func (m *Migrate) MigrateStore() error {
 			file.Rid = "undefined"
 		}
 
-		if file.UserId == "" {
-			file.UserId = "undefined"
+		if file.UserID == "" {
+			file.UserID = "undefined"
 		}
 
 		objectPath := m.getObjectPath(&file)
 
-		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath)
+		m.debugLog(fmt.Sprintf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath))
 
 		if err := m.destinationStore.Upload(objectPath, downloadedPath, file.Type); err != nil {
 			return err
@@ -167,12 +178,12 @@ func (m *Migrate) MigrateStore() error {
 			return err
 		}
 
-		fmt.Printf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name)
+		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
 		time.Sleep(time.Second * 1)
 	}
 
-	log.Println("Finished!")
+	m.debugLog("Finished!")
 
 	return nil
 }
@@ -182,9 +193,9 @@ func (m *Migrate) getObjectPath(file *models.File) string {
 
 	switch m.storeName {
 	case "Uploads":
-		objectPath = fmt.Sprintf("%s/%s/%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.Rid, file.UserId, file.ID)
+		objectPath = fmt.Sprintf("%s/%s/%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.Rid, file.UserID, file.ID)
 	case "Avatars":
-		objectPath = fmt.Sprintf("%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.UserId)
+		objectPath = fmt.Sprintf("%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.UserID)
 	}
 
 	// FileSystem just dumps them in the folder based on the ID
@@ -222,7 +233,7 @@ func (m *Migrate) fixFileForUpload(file *models.File, objectPath string) string 
 
 	ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", m.destinationStore.StoreType(), m.storeName, file.ID, file.Name)
 
-	file.Url = ufsPath
+	file.URL = ufsPath
 	file.Path = ufsPath
 	file.Store = m.destinationStore.StoreType() + ":" + m.storeName
 
@@ -240,12 +251,12 @@ func (m *Migrate) DownloadAll() error {
 		return err
 	}
 
-	fmt.Printf("Found %v files\n", len(files))
+	m.debugLog(fmt.Sprintf("Found %v files\n", len(files)))
 
 	for i, file := range files {
 		index := i + 1 // for logs
 
-		fmt.Printf("[%v/%v] Downloading %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType())
+		m.debugLog(fmt.Sprintf("[%v/%v] Downloading %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
 
 		if !file.Complete {
 			fmt.Printf("[%v/%v] File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
@@ -262,12 +273,12 @@ func (m *Migrate) DownloadAll() error {
 			}
 		}
 
-		fmt.Printf("[%v/%v] Downloaded %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType())
+		m.debugLog(fmt.Sprintf("[%v/%v] Downloaded %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
 
 		time.Sleep(time.Second * 1)
 	}
 
-	log.Println("Finished!")
+	m.debugLog("Finished!")
 
 	return nil
 }
@@ -283,7 +294,7 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 		return err
 	}
 
-	fmt.Printf("Found %v files in database\n", len(files))
+	m.debugLog(fmt.Sprintf("Found %v files in database\n", len(files)))
 
 	for i, file := range files {
 		index := i + 1 // for logs
@@ -295,7 +306,7 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 			continue
 		}
 
-		fmt.Printf("[%v/%v] Uploading %s to: %s\n", index, len(files), file.Name, m.destinationStore.StoreType())
+		m.debugLog(fmt.Sprintf("[%v/%v] Uploading %s to: %s\n", index, len(files), file.Name, m.destinationStore.StoreType()))
 
 		if !file.Complete {
 			fmt.Printf("[%v/%v] File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
@@ -304,7 +315,7 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 
 		objectPath := m.getObjectPath(&file)
 
-		fmt.Printf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath)
+		m.debugLog(fmt.Sprintf("[%v/%v] Uploading to %s to: %s\n", index, len(files), m.destinationStore.StoreType(), objectPath))
 		if err := m.destinationStore.Upload(objectPath, fileLocation, file.Type); err != nil {
 			return err
 		}
@@ -329,12 +340,12 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 			return err
 		}
 
-		fmt.Printf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name)
+		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
 		time.Sleep(time.Second * 1)
 	}
 
-	log.Println("Finished!")
+	m.debugLog("Finished!")
 
 	return nil
 }

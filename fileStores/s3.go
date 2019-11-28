@@ -1,4 +1,4 @@
-package fileStores
+package filestores
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	minio "github.com/minio/minio-go"
 )
 
+// S3 is the S3 file store
 type S3 struct {
 	Endpoint         string
 	Bucket           string
@@ -19,14 +20,17 @@ type S3 struct {
 	TempFileLocation string
 }
 
+// StoreType returns the name of the store
 func (s *S3) StoreType() string {
 	return "AmazonS3"
 }
 
+// SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
 func (s *S3) SetTempDirectory(dir string) {
 	s.TempFileLocation = dir
 }
 
+// Download will download the file to temp file store
 func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
@@ -54,6 +58,7 @@ func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 	return filePath, nil
 }
 
+// Upload will upload the file from given file path
 func (s *S3) Upload(objectPath string, filePath string, contentType string) error {
 	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {

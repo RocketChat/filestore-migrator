@@ -1,13 +1,12 @@
-package MigrateFileStore
+package migratefiles
 
 import (
 	"errors"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/RocketChat/MigrateFileStore/config"
-	"github.com/RocketChat/MigrateFileStore/fileStores"
+	"github.com/RocketChat/MigrateFileStore/filestores"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -15,14 +14,15 @@ import (
 type Migrate struct {
 	storeName          string
 	skipErrors         bool
-	sourceStore        fileStores.FileStore
-	destinationStore   fileStores.FileStore
+	sourceStore        filestores.FileStore
+	destinationStore   filestores.FileStore
 	databaseName       string
 	connectionString   string
 	fileCollectionName string
 	session            *mgo.Session
 	uniqueID           string
 	tempFileLocation   string
+	debug              bool
 }
 
 func New(config *config.Config, skipErrors bool) (*Migrate, error) {
@@ -41,25 +41,26 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 	config.TempFileLocation = strings.TrimSuffix(config.TempFileLocation, "/")
 
+	migrate := &Migrate{
+		skipErrors:       skipErrors,
+		databaseName:     config.Database.Database,
+		connectionString: config.Database.ConnectionString,
+		tempFileLocation: config.TempFileLocation,
+		debug:            config.DebugMode,
+	}
+
 	if _, err := os.Stat(config.TempFileLocation + "/uploads"); os.IsNotExist(err) {
 		if err := os.MkdirAll(config.TempFileLocation+"/uploads", 0777); err != nil {
-			log.Println(err)
+			migrate.debugLog(err)
 			return nil, errors.New("Temp Directory doesn't exist and unable to create it")
 		}
 	}
 
 	if _, err := os.Stat(config.TempFileLocation + "/avatars"); os.IsNotExist(err) {
 		if err := os.MkdirAll(config.TempFileLocation+"/avatars", 0777); err != nil {
-			log.Println(err)
+			migrate.debugLog(err)
 			return nil, errors.New("Temp Directory doesn't exist and unable to create it")
 		}
-	}
-
-	migrate := &Migrate{
-		skipErrors:       skipErrors,
-		databaseName:     config.Database.Database,
-		connectionString: config.Database.ConnectionString,
-		tempFileLocation: config.TempFileLocation,
 	}
 
 	if config.Source.Type != "" {
@@ -71,7 +72,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, err
 			}
 
-			sourceStore := &fileStores.GridFS{
+			sourceStore := &filestores.GridFS{
 				Database:         config.Database.Database,
 				Session:          session,
 				TempFileLocation: config.TempFileLocation,
@@ -84,7 +85,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for GoogleStorage")
 			}
 
-			sourceStore := &fileStores.GoogleStorage{
+			sourceStore := &filestores.GoogleStorage{
 				JSONKey:          config.Source.GoogleStorage.JSONKey,
 				Bucket:           config.Source.GoogleStorage.Bucket,
 				TempFileLocation: config.TempFileLocation,
@@ -96,7 +97,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for AmazonS3")
 			}
 
-			sourceStore := &fileStores.S3{
+			sourceStore := &filestores.S3{
 				Endpoint:         config.Source.AmazonS3.Endpoint,
 				AccessID:         config.Source.AmazonS3.AccessID,
 				AccessKey:        config.Source.AmazonS3.AccessKey,
@@ -118,7 +119,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Filesystem source location does not exist or is unaccessible")
 			}
 
-			sourceStore := &fileStores.FileSystem{
+			sourceStore := &filestores.FileSystem{
 				Location:         config.Source.FileSystem.Location,
 				TempFileLocation: config.TempFileLocation,
 			}
@@ -128,7 +129,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 			return nil, errors.New("Invalid Source Type")
 		}
 
-		log.Println("Source store type set to: ", config.Source.Type)
+		migrate.debugLog("Source store type set to: ", config.Source.Type)
 	}
 
 	if config.Destination.Type != "" {
@@ -139,7 +140,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for AmazonS3")
 			}
 
-			destinationStore := &fileStores.S3{
+			destinationStore := &filestores.S3{
 				Endpoint:  config.Destination.AmazonS3.Endpoint,
 				AccessID:  config.Destination.AmazonS3.AccessID,
 				AccessKey: config.Destination.AmazonS3.AccessKey,
@@ -155,7 +156,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for AmazonS3")
 			}
 
-			destinationStore := &fileStores.GoogleStorage{
+			destinationStore := &filestores.GoogleStorage{
 				JSONKey: config.Destination.GoogleStorage.JSONKey,
 				Bucket:  config.Destination.GoogleStorage.Bucket,
 			}
@@ -168,12 +169,12 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 			if _, err := os.Stat(config.Destination.FileSystem.Location); os.IsNotExist(err) {
 				if err := os.MkdirAll(config.Destination.FileSystem.Location, 0777); err != nil {
-					log.Println(err)
+					migrate.debugLog(err)
 					return nil, errors.New("filesystem directory doesn't exist and unable to create it")
 				}
 			}
 
-			destinationStore := &fileStores.FileSystem{
+			destinationStore := &filestores.FileSystem{
 				Location: config.Destination.FileSystem.Location,
 			}
 
@@ -182,7 +183,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 			return nil, errors.New("Invalid Destination Type")
 		}
 
-		log.Println("Destination store type set to: ", config.Destination.Type)
+		migrate.debugLog("Destination store type set to: ", config.Destination.Type)
 
 	}
 
@@ -286,14 +287,10 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 }
 
 func connectDB(connectionstring string) (*mgo.Session, error) {
-	log.Println("Connecting to mongodb")
-
 	sess, err := mgo.Dial(connectionstring)
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println("Connected to mongodb")
 
 	return sess.Copy(), nil
 }

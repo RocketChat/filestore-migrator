@@ -9,11 +9,13 @@ import (
 
 var _config *Config
 
+// Config is the configuration object that will be deserialized from yaml and passed into the migrate client
 type Config struct {
 	Database         DatabaseConfig `yaml:"database"`
 	Source           MigrateTarget  `yaml:"source"`
 	Destination      MigrateTarget  `yaml:"destination"`
 	TempFileLocation string         `yaml:"tempFileLocation"`
+	DebugMode        bool           `yaml:"debugMode"`
 }
 
 // DatabaseConfig configuration to connect to database
@@ -22,6 +24,7 @@ type DatabaseConfig struct {
 	Database         string `yaml:"database"`
 }
 
+// MigrateTarget is a FileStore configuration for either source or destination
 type MigrateTarget struct {
 	Type          string `yaml:"type"`
 	GoogleStorage struct {
@@ -41,10 +44,12 @@ type MigrateTarget struct {
 	} `yaml:"FileSystem"`
 }
 
+// Get returns the config
 func Get() *Config {
 	return _config
 }
 
+// Load loads the config from file
 func (c *Config) Load(filePath string) error {
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
