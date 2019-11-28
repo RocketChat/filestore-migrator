@@ -10,13 +10,14 @@ import (
 var _config *Config
 
 type Config struct {
-	Database         databaseConfig `yaml:"database"`
+	Database         DatabaseConfig `yaml:"database"`
 	Source           MigrateTarget  `yaml:"source"`
 	Destination      MigrateTarget  `yaml:"destination"`
 	TempFileLocation string         `yaml:"tempFileLocation"`
 }
 
-type databaseConfig struct {
+// DatabaseConfig configuration to connect to database
+type DatabaseConfig struct {
 	ConnectionString string `yaml:"connectionString"`
 	Database         string `yaml:"database"`
 }

@@ -20,6 +20,10 @@ func (g *GridFS) StoreType() string {
 	return "GridFS"
 }
 
+func (g *GridFS) SetTempDirectory(dir string) {
+	g.TempFileLocation = dir
+}
+
 func (g *GridFS) Download(fileCollection string, file models.File) (string, error) {
 	sess := g.Session.Copy()
 	defer sess.Close()

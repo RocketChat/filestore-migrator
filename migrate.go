@@ -9,6 +9,7 @@ import (
 	"github.com/RocketChat/MigrateFileStore/config"
 	"github.com/RocketChat/MigrateFileStore/fileStores"
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type Migrate struct {
@@ -21,6 +22,7 @@ type Migrate struct {
 	fileCollectionName string
 	session            *mgo.Session
 	uniqueID           string
+	tempFileLocation   string
 }
 
 func New(config *config.Config, skipErrors bool) (*Migrate, error) {
@@ -39,8 +41,15 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 	config.TempFileLocation = strings.TrimSuffix(config.TempFileLocation, "/")
 
-	if _, err := os.Stat(config.TempFileLocation); os.IsNotExist(err) {
-		if err := os.MkdirAll(config.TempFileLocation, 0777); err != nil {
+	if _, err := os.Stat(config.TempFileLocation + "/uploads"); os.IsNotExist(err) {
+		if err := os.MkdirAll(config.TempFileLocation+"/uploads", 0777); err != nil {
+			log.Println(err)
+			return nil, errors.New("Temp Directory doesn't exist and unable to create it")
+		}
+	}
+
+	if _, err := os.Stat(config.TempFileLocation + "/avatars"); os.IsNotExist(err) {
+		if err := os.MkdirAll(config.TempFileLocation+"/avatars", 0777); err != nil {
 			log.Println(err)
 			return nil, errors.New("Temp Directory doesn't exist and unable to create it")
 		}
@@ -50,6 +59,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 		skipErrors:       skipErrors,
 		databaseName:     config.Database.Database,
 		connectionString: config.Database.ConnectionString,
+		tempFileLocation: config.TempFileLocation,
 	}
 
 	if config.Source.Type != "" {
@@ -181,6 +191,98 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 	}
 
 	return migrate, nil
+}
+
+// GetRocketChatStore uses database to build source Store from settings
+func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, error) {
+	session, err := connectDB(dbConfig.ConnectionString)
+	if err != nil {
+		return nil, err
+	}
+
+	sess := session.Copy()
+	defer sess.Close()
+
+	db := sess.DB(dbConfig.Database)
+
+	settingsCollection := db.C("rocketchat_settings")
+
+	var fileUploadStorageType rocketChatSetting
+
+	if err := settingsCollection.Find(bson.M{"_id": "FileUpload_Storage_Type"}).One(&fileUploadStorageType); err != nil {
+		return nil, err
+	}
+
+	sourceStore := &config.MigrateTarget{}
+
+	switch fileUploadStorageType.Value {
+	case "GridFS":
+		sourceStore.Type = "GridFS"
+		return sourceStore, nil
+	case "AmazonS3":
+		sourceStore.Type = "AmazonS3"
+		var awsAccessID rocketChatSetting
+
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_AWSAccessKeyId"}).One(&awsAccessID); err != nil {
+			return nil, err
+		}
+
+		var awsSecret rocketChatSetting
+
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_AWSSecretAccessKey"}).One(&awsSecret); err != nil {
+			return nil, err
+		}
+
+		var bucket rocketChatSetting
+
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_Bucket"}).One(&bucket); err != nil {
+			return nil, err
+		}
+
+		var region rocketChatSetting
+
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_Region"}).One(&region); err != nil {
+			return nil, err
+		}
+
+		var s3url rocketChatSetting
+
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_S3_BucketURL"}).One(&s3url); err != nil {
+			return nil, err
+		}
+
+		if s3url.Value == "" {
+			s3url.Value = "s3.amazonaws.com"
+		}
+
+		sourceStore.AmazonS3.Endpoint = s3url.Value
+		sourceStore.AmazonS3.Bucket = bucket.Value
+		sourceStore.AmazonS3.AccessID = awsAccessID.Value
+		sourceStore.AmazonS3.AccessKey = awsSecret.Value
+		sourceStore.AmazonS3.Region = region.Value
+		sourceStore.AmazonS3.UseSSL = true
+
+		return sourceStore, nil
+
+	/*case "GoogleCloudStorage":
+	sourceStore.Type = "GoogleStorage"*/
+
+	case "FileSystem":
+		sourceStore.Type = "FileSystem"
+		var filesystemLocation rocketChatSetting
+
+		if err := settingsCollection.Find(bson.M{"_id": "FileUpload_FileSystemPath"}).One(&filesystemLocation); err != nil {
+			return nil, err
+		}
+
+		sourceStore.FileSystem.Location = filesystemLocation.Value
+		return sourceStore, nil
+
+	default:
+		return nil, errors.New("unable to detect supported fileupload storage type.  (Unable to detect google storage currently)")
+	}
+
+	return nil, nil
 }
 
 func connectDB(connectionstring string) (*mgo.Session, error) {

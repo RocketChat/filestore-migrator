@@ -26,17 +26,21 @@ func main() {
 		panic(err)
 	}
 
+	if err := migrate.SetStoreName(*storeName); err != nil {
+		panic(err)
+	}
+
 	switch *method {
 	case "migrate":
-		if err := migrate.MigrateStore(*storeName); err != nil {
+		if err := migrate.MigrateStore(); err != nil {
 			panic(err)
 		}
 	case "upload":
-		if err := migrate.UploadAll(*storeName, config.TempFileLocation); err != nil {
+		if err := migrate.UploadAll(config.TempFileLocation); err != nil {
 			panic(err)
 		}
 	case "download":
-		if err := migrate.DownloadAll(*storeName); err != nil {
+		if err := migrate.DownloadAll(); err != nil {
 			panic(err)
 		}
 	default:
