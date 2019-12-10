@@ -296,6 +296,8 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 
 	m.debugLog(fmt.Sprintf("Found %v files in database\n", len(files)))
 
+	filesRoot = filesRoot + "/" + strings.ToLower(m.storeName)
+
 	for i, file := range files {
 		index := i + 1 // for logs
 
