@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/RocketChat/MigrateFileStore/config"
-	"github.com/RocketChat/MigrateFileStore/filestores"
+	"github.com/RocketChat/MigrateFileStore/fileStores"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -14,8 +14,8 @@ import (
 type Migrate struct {
 	storeName          string
 	skipErrors         bool
-	sourceStore        filestores.FileStore
-	destinationStore   filestores.FileStore
+	sourceStore        fileStores.FileStore
+	destinationStore   fileStores.FileStore
 	databaseName       string
 	connectionString   string
 	fileCollectionName string
@@ -72,7 +72,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, err
 			}
 
-			sourceStore := &filestores.GridFS{
+			sourceStore := &fileStores.GridFS{
 				Database:         config.Database.Database,
 				Session:          session,
 				TempFileLocation: config.TempFileLocation,
@@ -85,7 +85,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for GoogleStorage")
 			}
 
-			sourceStore := &filestores.GoogleStorage{
+			sourceStore := &fileStores.GoogleStorage{
 				JSONKey:          config.Source.GoogleStorage.JSONKey,
 				Bucket:           config.Source.GoogleStorage.Bucket,
 				TempFileLocation: config.TempFileLocation,
@@ -97,7 +97,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for AmazonS3")
 			}
 
-			sourceStore := &filestores.S3{
+			sourceStore := &fileStores.S3{
 				Endpoint:         config.Source.AmazonS3.Endpoint,
 				AccessID:         config.Source.AmazonS3.AccessID,
 				AccessKey:        config.Source.AmazonS3.AccessKey,
@@ -119,7 +119,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Filesystem source location does not exist or is unaccessible")
 			}
 
-			sourceStore := &filestores.FileSystem{
+			sourceStore := &fileStores.FileSystem{
 				Location:         config.Source.FileSystem.Location,
 				TempFileLocation: config.TempFileLocation,
 			}
@@ -140,7 +140,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for AmazonS3")
 			}
 
-			destinationStore := &filestores.S3{
+			destinationStore := &fileStores.S3{
 				Endpoint:  config.Destination.AmazonS3.Endpoint,
 				AccessID:  config.Destination.AmazonS3.AccessID,
 				AccessKey: config.Destination.AmazonS3.AccessKey,
@@ -156,7 +156,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				return nil, errors.New("Make sure you include all of the required options for AmazonS3")
 			}
 
-			destinationStore := &filestores.GoogleStorage{
+			destinationStore := &fileStores.GoogleStorage{
 				JSONKey: config.Destination.GoogleStorage.JSONKey,
 				Bucket:  config.Destination.GoogleStorage.Bucket,
 			}
@@ -174,7 +174,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				}
 			}
 
-			destinationStore := &filestores.FileSystem{
+			destinationStore := &fileStores.FileSystem{
 				Location: config.Destination.FileSystem.Location,
 			}
 

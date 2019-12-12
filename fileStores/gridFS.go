@@ -1,4 +1,4 @@
-package filestores
+package fileStores
 
 import (
 	"io"
