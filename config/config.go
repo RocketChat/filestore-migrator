@@ -27,6 +27,7 @@ type DatabaseConfig struct {
 // MigrateTarget is a FileStore configuration for either source or destination
 type MigrateTarget struct {
 	Type          string `yaml:"type"`
+	ReferenceOnly bool   `yaml:"-"`
 	GoogleStorage struct {
 		JSONKey string `yaml:"jsonKey"`
 		Bucket  string `yaml:"bucket"`

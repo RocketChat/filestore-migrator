@@ -81,7 +81,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 			migrate.sourceStore = sourceStore
 
 		case "GoogleStorage":
-			if config.Source.GoogleStorage.Bucket == "" || config.Source.GoogleStorage.JSONKey == "" {
+			if (config.Source.GoogleStorage.Bucket == "" || config.Source.GoogleStorage.JSONKey == "") && !config.Source.ReferenceOnly {
 				return nil, errors.New("Make sure you include all of the required options for GoogleStorage")
 			}
 
@@ -93,7 +93,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 			migrate.sourceStore = sourceStore
 		case "AmazonS3":
-			if config.Source.AmazonS3.AccessID == "" || config.Source.AmazonS3.AccessKey == "" || config.Source.AmazonS3.Bucket == "" {
+			if (config.Source.AmazonS3.AccessID == "" || config.Source.AmazonS3.AccessKey == "" || config.Source.AmazonS3.Bucket == "") && !config.Source.ReferenceOnly {
 				return nil, errors.New("Make sure you include all of the required options for AmazonS3")
 			}
 
@@ -109,7 +109,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 			migrate.sourceStore = sourceStore
 		case "FileSystem":
-			if config.Source.FileSystem.Location == "" {
+			if config.Source.FileSystem.Location == "" && !config.Source.ReferenceOnly {
 				return nil, errors.New("Make sure you include all of the required options for FileSystem")
 			}
 
