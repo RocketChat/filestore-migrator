@@ -25,7 +25,7 @@ func (m *Migrate) DebugMode() {
 
 func (m *Migrate) debugLog(v ...interface{}) {
 	if m.debug {
-		log.Println(v)
+		log.Println(v...)
 	}
 }
 

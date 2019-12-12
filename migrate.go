@@ -11,6 +11,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// Migrate needs to be initialized to begin any migration
 type Migrate struct {
 	storeName          string
 	skipErrors         bool
@@ -25,6 +26,7 @@ type Migrate struct {
 	debug              bool
 }
 
+// New takes the config and returns an initialized Migrate ready to begin migrations
 func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 	if config.Database.ConnectionString == "" {
