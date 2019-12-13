@@ -46,27 +46,30 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 
 	filePath := g.TempFileLocation + "/" + file.ID
 
-	getCall := service.Objects.Get(g.Bucket, file.GoogleStorage.Path)
-	resp, err := getCall.Download()
-	if err != nil {
-		if strings.Contains(err.Error(), "No such object:") {
-			return "", models.ErrNotFound
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+
+		getCall := service.Objects.Get(g.Bucket, file.GoogleStorage.Path)
+		resp, err := getCall.Download()
+		if err != nil {
+			if strings.Contains(err.Error(), "No such object:") {
+				return "", models.ErrNotFound
+			}
+
+			return "", err
 		}
 
-		return "", err
-	}
+		defer resp.Body.Close()
 
-	defer resp.Body.Close()
+		f, err := os.Create(filePath)
+		if err != nil {
+			return "", err
+		}
 
-	f, err := os.Create(filePath)
-	if err != nil {
-		return "", err
-	}
+		defer f.Close()
 
-	defer f.Close()
-
-	if _, err = io.Copy(f, resp.Body); err != nil {
-		return "", err
+		if _, err = io.Copy(f, resp.Body); err != nil {
+			return "", err
+		}
 	}
 
 	return filePath, nil

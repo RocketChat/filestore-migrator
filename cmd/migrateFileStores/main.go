@@ -12,7 +12,7 @@ func main() {
 
 	configFile := flag.String("configFile", "config.yaml", "Config File full path. Defaults to current folder")
 	storeName := flag.String("storeName", "Uploads", "Store Name.  Options: (Uploads, Avatars)")
-	method := flag.String("method", "download", "Migrate/Upload/Download")
+	method := flag.String("method", "download", "Options are: (migrate/upload/download)")
 	skipErrors := flag.Bool("skipErrors", false, "Skip on error")
 	verbose := flag.Bool("verbose", true, "setting to true will spit out more verbose logs")
 

@@ -43,15 +43,18 @@ func (g *GridFS) Download(fileCollection string, file models.File) (string, erro
 
 	filePath := g.TempFileLocation + "/" + file.ID
 
-	f, err := os.Create(filePath)
-	if err != nil {
-		return "", err
-	}
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 
-	defer f.Close()
+		f, err := os.Create(filePath)
+		if err != nil {
+			return "", err
+		}
 
-	if _, err = io.Copy(f, gridFile); err != nil {
-		return "", err
+		defer f.Close()
+
+		if _, err = io.Copy(f, gridFile); err != nil {
+			return "", err
+		}
 	}
 
 	return filePath, err

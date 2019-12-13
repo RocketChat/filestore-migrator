@@ -39,20 +39,24 @@ func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 
 	filePath := s.TempFileLocation + "/" + file.ID
 
-	object, err := minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
-	if err != nil {
-		return "", err
-	}
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 
-	f, err := os.Create(filePath)
-	if err != nil {
-		return "", err
-	}
+		object, err := minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
+		if err != nil {
+			return "", err
+		}
 
-	defer f.Close()
+		f, err := os.Create(filePath)
+		if err != nil {
+			return "", err
+		}
 
-	if _, err = io.Copy(f, object); err != nil {
-		return "", err
+		defer f.Close()
+
+		if _, err = io.Copy(f, object); err != nil {
+			return "", err
+		}
+
 	}
 
 	return filePath, nil
