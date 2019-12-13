@@ -25,8 +25,13 @@ func (m *Migrate) DebugMode() {
 
 func (m *Migrate) debugLog(v ...interface{}) {
 	if m.debug {
-		log.Println(v...)
+		logger(v...)
 	}
+}
+
+func logger(v ...interface{}) {
+	all := append([]interface{}{fmt.Sprintf("[%s]", time.Now().Format("01/02/2006 15:04:05"))}, v...)
+	log.Println(all...)
 }
 
 // SetStoreName that will be operating on
@@ -97,7 +102,13 @@ func (m *Migrate) getFiles() ([]models.File, error) {
 
 	m.debugLog(fileCollection, m.sourceStore.StoreType()+":"+m.storeName)
 
-	if err := collection.Find(bson.M{"store": m.sourceStore.StoreType() + ":" + m.storeName}).All(&files); err != nil {
+	query := bson.M{"store": m.sourceStore.StoreType() + ":" + m.storeName}
+
+	if !m.fileOffset.IsZero() {
+		query["uploadedAt"] = bson.M{"$gte": m.fileOffset}
+	}
+
+	if err := collection.Find(query).All(&files); err != nil {
 		if err == mgo.ErrNotFound {
 			return nil, errors.New("No files found")
 		}
@@ -180,7 +191,14 @@ func (m *Migrate) MigrateStore() error {
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
-		time.Sleep(time.Second * 1)
+		if os.Getenv("FILE_DELAY") != "" {
+			delay, err := time.ParseDuration(os.Getenv("FILE_DELAY"))
+			if err != nil {
+				return err
+			}
+
+			time.Sleep(delay)
+		}
 	}
 
 	m.debugLog("Finished!")
@@ -240,6 +258,17 @@ func (m *Migrate) fixFileForUpload(file *models.File, objectPath string) string 
 	return unset
 }
 
+// SetFileOffset sets an offset for file upload/downloads
+func (m *Migrate) SetFileOffset(offset time.Time) error {
+	if offset.IsZero() {
+		return errors.New("invalid date")
+	}
+
+	m.fileOffset = offset
+
+	return nil
+}
+
 // DownloadAll downloads all files from a filestore
 func (m *Migrate) DownloadAll() error {
 	if m.sourceStore == nil {
@@ -275,7 +304,14 @@ func (m *Migrate) DownloadAll() error {
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Downloaded %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
 
-		time.Sleep(time.Second * 1)
+		if os.Getenv("FILE_DELAY") != "" {
+			delay, err := time.ParseDuration(os.Getenv("FILE_DELAY"))
+			if err != nil {
+				return err
+			}
+
+			time.Sleep(delay)
+		}
 	}
 
 	m.debugLog("Finished!")
@@ -344,7 +380,14 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
-		time.Sleep(time.Second * 1)
+		if os.Getenv("FILE_DELAY") != "" {
+			delay, err := time.ParseDuration(os.Getenv("FILE_DELAY"))
+			if err != nil {
+				return err
+			}
+
+			time.Sleep(delay)
+		}
 	}
 
 	m.debugLog("Finished!")

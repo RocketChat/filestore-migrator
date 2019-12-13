@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/RocketChat/MigrateFileStore/config"
 	"github.com/RocketChat/MigrateFileStore/fileStores"
@@ -20,6 +21,7 @@ type Migrate struct {
 	databaseName       string
 	connectionString   string
 	fileCollectionName string
+	fileOffset         time.Time
 	session            *mgo.Session
 	uniqueID           string
 	tempFileLocation   string
