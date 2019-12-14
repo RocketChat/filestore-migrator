@@ -185,7 +185,6 @@ func (m *Migrate) MigrateStore() error {
 		}
 
 		sess := m.session.Copy()
-		defer sess.Close()
 
 		db := sess.DB(m.databaseName)
 		collection := db.C(m.fileCollectionName)
@@ -193,6 +192,8 @@ func (m *Migrate) MigrateStore() error {
 		if err := collection.Update(bson.M{"_id": file.ID}, update); err != nil {
 			return err
 		}
+
+		sess.Close()
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
@@ -361,7 +362,6 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 		}
 
 		sess := m.session.Copy()
-		defer sess.Close()
 
 		db := sess.DB(m.databaseName)
 		collection := db.C(m.fileCollectionName)
@@ -369,6 +369,8 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 		if err := collection.Update(bson.M{"_id": file.ID}, update); err != nil {
 			return err
 		}
+
+		sess.Close()
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
