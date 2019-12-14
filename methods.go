@@ -34,6 +34,11 @@ func logger(v ...interface{}) {
 	log.Println(all...)
 }
 
+// SetFileDelay set the delay between
+func (m *Migrate) SetFileDelay(duration time.Duration) {
+	m.fileDelay = duration
+}
+
 // SetStoreName that will be operating on
 func (m *Migrate) SetStoreName(storeName string) error {
 	if storeName != "Uploads" && storeName != "Avatars" {
@@ -191,14 +196,8 @@ func (m *Migrate) MigrateStore() error {
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
-		if os.Getenv("FILE_DELAY") != "" {
-			delay, err := time.ParseDuration(os.Getenv("FILE_DELAY"))
-			if err != nil {
-				return err
-			}
+		time.Sleep(m.fileDelay)
 
-			time.Sleep(delay)
-		}
 	}
 
 	m.debugLog("Finished!")
@@ -304,14 +303,7 @@ func (m *Migrate) DownloadAll() error {
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Downloaded %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
 
-		if os.Getenv("FILE_DELAY") != "" {
-			delay, err := time.ParseDuration(os.Getenv("FILE_DELAY"))
-			if err != nil {
-				return err
-			}
-
-			time.Sleep(delay)
-		}
+		time.Sleep(m.fileDelay)
 	}
 
 	m.debugLog("Finished!")
@@ -380,14 +372,7 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
-		if os.Getenv("FILE_DELAY") != "" {
-			delay, err := time.ParseDuration(os.Getenv("FILE_DELAY"))
-			if err != nil {
-				return err
-			}
-
-			time.Sleep(delay)
-		}
+		time.Sleep(m.fileDelay)
 	}
 
 	m.debugLog("Finished!")

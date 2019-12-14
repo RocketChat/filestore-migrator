@@ -16,6 +16,7 @@ type Config struct {
 	Destination      MigrateTarget  `yaml:"destination"`
 	TempFileLocation string         `yaml:"tempFileLocation"`
 	DebugMode        bool           `yaml:"debugMode"`
+	FileDelay        string         `yaml:"fileDelay"`
 }
 
 // DatabaseConfig configuration to connect to database

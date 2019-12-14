@@ -2,6 +2,7 @@ package migratefiles
 
 import (
 	"errors"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -25,6 +26,7 @@ type Migrate struct {
 	session            *mgo.Session
 	uniqueID           string
 	tempFileLocation   string
+	fileDelay          time.Duration
 	debug              bool
 }
 
@@ -45,11 +47,24 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 	config.TempFileLocation = strings.TrimSuffix(config.TempFileLocation, "/")
 
+	fileDelay := time.Millisecond * 10
+
+	if config.FileDelay != "" {
+		delay, err := time.ParseDuration(config.FileDelay)
+		if err != nil {
+			log.Println("invalid fileDelay value")
+			return nil, err
+		}
+
+		fileDelay = delay
+	}
+
 	migrate := &Migrate{
 		skipErrors:       skipErrors,
 		databaseName:     config.Database.Database,
 		connectionString: config.Database.ConnectionString,
 		tempFileLocation: config.TempFileLocation,
+		fileDelay:        fileDelay,
 		debug:            config.DebugMode,
 	}
 
