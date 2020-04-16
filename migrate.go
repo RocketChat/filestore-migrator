@@ -1,8 +1,10 @@
 package migratefiles
 
 import (
+	"crypto/tls"
 	"errors"
 	"log"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -306,7 +308,19 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 }
 
 func connectDB(connectionstring string) (*mgo.Session, error) {
-	sess, err := mgo.Dial(connectionstring)
+
+	dialInfo, err := mgo.ParseURL(connectionstring)
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig := &tls.Config{}
+	dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+		conn, err := tls.Dial("tcp", addr.String(), tlsConfig)
+		return conn, err
+	}
+
+	sess, err := mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		return nil, err
 	}
