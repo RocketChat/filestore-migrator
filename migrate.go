@@ -310,10 +310,18 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 func connectDB(connectionstring string) (*mgo.Session, error) {
 
 	ssl := false
+	secondaryPreferred := false
+
 	if strings.Contains(connectionstring, "ssl=true") {
 		connectionstring = strings.Replace(connectionstring, "&ssl=true", "", -1)
 		connectionstring = strings.Replace(connectionstring, "?ssl=true&", "?", -1)
 		ssl = true
+	}
+
+	if strings.Contains(connectionstring, "readPreference=secondary") {
+		connectionstring = strings.Replace(connectionstring, "&readPreference=secondary", "", -1)
+		connectionstring = strings.Replace(connectionstring, "?readPreference=secondary", "", -1)
+		secondaryPreferred = true
 	}
 
 	dialInfo, err := mgo.ParseURL(connectionstring)
@@ -332,6 +340,10 @@ func connectDB(connectionstring string) (*mgo.Session, error) {
 	sess, err := mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		return nil, err
+	}
+
+	if secondaryPreferred {
+		sess.SetMode(mgo.SecondaryPreferred, true)
 	}
 
 	return sess.Copy(), nil
