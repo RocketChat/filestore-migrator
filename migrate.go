@@ -309,15 +309,24 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 
 func connectDB(connectionstring string) (*mgo.Session, error) {
 
+	ssl := false
+	if strings.Contains(connectionstring, "ssl=true") {
+		connectionstring = strings.Replace(connectionstring, "&ssl=true", "", -1)
+		connectionstring = strings.Replace(connectionstring, "?ssl=true&", "?", -1)
+		ssl = true
+	}
+
 	dialInfo, err := mgo.ParseURL(connectionstring)
 	if err != nil {
 		return nil, err
 	}
 
-	tlsConfig := &tls.Config{}
-	dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
-		conn, err := tls.Dial("tcp", addr.String(), tlsConfig)
-		return conn, err
+	if ssl {
+		tlsConfig := &tls.Config{}
+		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+			conn, err := tls.Dial("tcp", addr.String(), tlsConfig)
+			return conn, err
+		}
 	}
 
 	sess, err := mgo.DialWithInfo(dialInfo)
