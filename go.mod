@@ -8,6 +8,7 @@ require (
 	github.com/go-ini/ini v1.61.0 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9
 	github.com/golang/protobuf v1.3.2
+	github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/go-homedir v1.1.0

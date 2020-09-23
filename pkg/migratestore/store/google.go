@@ -10,7 +10,7 @@ import (
 
 	"github.com/RocketChat/MigrateFileStore/pkg/migratestore/rocketchat"
 	"golang.org/x/oauth2/google"
-	cstorage "google.golang.org/api/storage/v1"
+	"google.golang.org/api/storage/v1"
 )
 
 // GoogleStorageProvider provides methods to use the Google Cloud Storage offering as a storage provider.
@@ -41,7 +41,7 @@ func (g *GoogleStorageProvider) Download(fileCollection string, file rocketchat.
 
 	c := cfg.Client(ctx)
 
-	service, err := cstorage.New(c)
+	service, err := storage.New(c)
 
 	filePath := g.TempFileLocation + "/" + file.ID
 
@@ -85,7 +85,7 @@ func (g *GoogleStorageProvider) Upload(path string, filePath string, contentType
 
 	c := cfg.Client(ctx)
 
-	service, err := cstorage.New(c)
+	service, err := storage.New(c)
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -95,7 +95,7 @@ func (g *GoogleStorageProvider) Upload(path string, filePath string, contentType
 
 	defer file.Close()
 
-	object := &cstorage.Object{
+	object := &storage.Object{
 		Name: path,
 	}
 

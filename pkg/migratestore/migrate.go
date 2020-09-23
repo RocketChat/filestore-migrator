@@ -1,4 +1,4 @@
-package migratefilestore
+package migratestore
 
 import (
 	"crypto/tls"
