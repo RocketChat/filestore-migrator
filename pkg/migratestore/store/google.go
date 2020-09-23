@@ -1,4 +1,4 @@
-package fileStores
+package store
 
 import (
 	"context"
@@ -8,31 +8,30 @@ import (
 	"os"
 	"strings"
 
-	"github.com/RocketChat/MigrateFileStore/models"
+	"github.com/RocketChat/MigrateFileStore/pkg/migratestore/rocketchat"
 	"golang.org/x/oauth2/google"
-	storage "google.golang.org/api/storage/v1"
+	cstorage "google.golang.org/api/storage/v1"
 )
 
-// GoogleStorage is the google storage file store
-type GoogleStorage struct {
+// GoogleStorageProvider provides methods to use the Google Cloud Storage offering as a storage provider.
+type GoogleStorageProvider struct {
 	JSONKey          string
 	Bucket           string
 	TempFileLocation string
 }
 
 // StoreType returns the name of the store
-func (g *GoogleStorage) StoreType() string {
+func (g *GoogleStorageProvider) StoreType() string {
 	return "GoogleCloudStorage"
 }
 
 // SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
-func (g *GoogleStorage) SetTempDirectory(dir string) {
+func (g *GoogleStorageProvider) SetTempDirectory(dir string) {
 	g.TempFileLocation = dir
 }
 
-// Download will download the file to temp file store
-func (g *GoogleStorage) Download(fileCollection string, file models.File) (string, error) {
-
+// Download downloads a file from the storage provider and moves it to the temporary file store
+func (g *GoogleStorageProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
 	ctx := context.Background()
 
 	cfg, err := google.JWTConfigFromJSON([]byte(g.JSONKey), "https://www.googleapis.com/auth/cloud-platform")
@@ -42,7 +41,7 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 
 	c := cfg.Client(ctx)
 
-	service, err := storage.New(c)
+	service, err := cstorage.New(c)
 
 	filePath := g.TempFileLocation + "/" + file.ID
 
@@ -52,7 +51,7 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 		resp, err := getCall.Download()
 		if err != nil {
 			if strings.Contains(err.Error(), "No such object:") {
-				return "", models.ErrNotFound
+				return "", ErrNotFound
 			}
 
 			return "", err
@@ -75,8 +74,8 @@ func (g *GoogleStorage) Download(fileCollection string, file models.File) (strin
 	return filePath, nil
 }
 
-// Upload will upload the file from given file path
-func (g *GoogleStorage) Upload(path string, filePath string, contentType string) error {
+// Upload uploads a file from given path to the storage provider
+func (g *GoogleStorageProvider) Upload(path string, filePath string, contentType string) error {
 	ctx := context.Background()
 
 	cfg, err := google.JWTConfigFromJSON([]byte(g.JSONKey), "https://www.googleapis.com/auth/cloud-platform")
@@ -86,7 +85,7 @@ func (g *GoogleStorage) Upload(path string, filePath string, contentType string)
 
 	c := cfg.Client(ctx)
 
-	service, err := storage.New(c)
+	service, err := cstorage.New(c)
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -96,7 +95,7 @@ func (g *GoogleStorage) Upload(path string, filePath string, contentType string)
 
 	defer file.Close()
 
-	object := &storage.Object{
+	object := &cstorage.Object{
 		Name: path,
 	}
 

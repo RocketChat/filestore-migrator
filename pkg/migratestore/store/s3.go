@@ -1,16 +1,16 @@
-package fileStores
+package store
 
 import (
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/RocketChat/MigrateFileStore/models"
+	"github.com/RocketChat/MigrateFileStore/pkg/migratestore/rocketchat"
 	minio "github.com/minio/minio-go"
 )
 
-// S3 is the S3 file store
-type S3 struct {
+// S3Provider provides methods to use any S3 complaint provider as a storage provider.
+type S3Provider struct {
 	Endpoint         string
 	Bucket           string
 	AccessID         string
@@ -21,17 +21,17 @@ type S3 struct {
 }
 
 // StoreType returns the name of the store
-func (s *S3) StoreType() string {
+func (s *S3Provider) StoreType() string {
 	return "AmazonS3"
 }
 
 // SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
-func (s *S3) SetTempDirectory(dir string) {
+func (s *S3Provider) SetTempDirectory(dir string) {
 	s.TempFileLocation = dir
 }
 
 // Download will download the file to temp file store
-func (s *S3) Download(fileCollection string, file models.File) (string, error) {
+func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (string, error) {
 	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
 		return "", err
@@ -40,7 +40,6 @@ func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 	filePath := s.TempFileLocation + "/" + file.ID
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-
 		object, err := minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
 		if err != nil {
 			return "", err
@@ -63,7 +62,7 @@ func (s *S3) Download(fileCollection string, file models.File) (string, error) {
 }
 
 // Upload will upload the file from given file path
-func (s *S3) Upload(objectPath string, filePath string, contentType string) error {
+func (s *S3Provider) Upload(objectPath string, filePath string, contentType string) error {
 	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
 		return err

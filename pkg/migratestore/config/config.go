@@ -27,23 +27,29 @@ type DatabaseConfig struct {
 
 // MigrateTarget is a FileStore configuration for either source or destination
 type MigrateTarget struct {
-	Type          string `yaml:"type"`
-	ReferenceOnly bool   `yaml:"-"`
-	GoogleStorage struct {
-		JSONKey string `yaml:"jsonKey"`
-		Bucket  string `yaml:"bucket"`
-	} `yaml:"GoogleStorage"`
-	AmazonS3 struct {
-		Endpoint  string `yaml:"endpoint"`
-		Bucket    string `yaml:"bucket"`
-		AccessID  string `yaml:"accessId"`
-		AccessKey string `yaml:"accessKey"`
-		Region    string `yaml:"region"`
-		UseSSL    bool   `yaml:"useSSL"`
-	} `yaml:"AmazonS3"`
-	FileSystem struct {
-		Location string `yaml:"location"`
-	} `yaml:"FileSystem"`
+	Type          string                     `yaml:"type"`
+	ReferenceOnly bool                       `yaml:"-"`
+	GoogleStorage MigrateTargetGoogleStorage `yaml:"GoogleStorage"`
+	AmazonS3      MigrateTargetS3            `yaml:"AmazonS3"`
+	FileSystem    MigrateTargetFileSystem    `yaml:"FileSystem"`
+}
+
+type MigrateTargetGoogleStorage struct {
+	JSONKey string `yaml:"jsonKey"`
+	Bucket  string `yaml:"bucket"`
+}
+
+type MigrateTargetS3 struct {
+	Endpoint  string `yaml:"endpoint"`
+	Bucket    string `yaml:"bucket"`
+	AccessID  string `yaml:"accessId"`
+	AccessKey string `yaml:"accessKey"`
+	Region    string `yaml:"region"`
+	UseSSL    bool   `yaml:"useSSL"`
+}
+
+type MigrateTargetFileSystem struct {
+	Location string `yaml:"location"`
 }
 
 // Get returns the config

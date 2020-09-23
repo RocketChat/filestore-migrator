@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  rocketchat:
+    container_name: rocketchat
+    image: rocketchat/rocket.chat:latest
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+          node main.js &&
+          s=$$? && break || s=$$?;
+          echo \"Tried $$i times. Waiting 5 secs...\";
+          sleep 5;
+        done; (exit $$s)"
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      - PORT=3000
+      - ROOT_URL=http://localhost:3000
+      - MONGO_URL=mongodb://mongo:27017/rocketchat
+      - MONGO_OPLOG_URL=mongodb://mongo:27017/local
+      - MAIL_URL=smtp://smtp.email
+    depends_on:
+      - mongo
+    ports:
+      - 3000:3000
+  minio-source:
+    container_name: minio-source
+    image: minio/minio:latest
+    command: server /data
+    restart: unless-stopped
+    ports:
+      - 9000:9000
+    environment:
+      - MINIO_ACCESS_KEY=1BNVFC125YUTIA8X4EZ5
+      - MINIO_SECRET_KEY=KNBIVSXVSEQU8YN8TR2J9HGP2D6X9JZK2S2Vc1Pf
+    volumes:
+      - minio_source_vol:/data
+  minio-destination:
+    container_name: minio-destination
+    image: minio/minio:latest
+    command: server /data
+    restart: unless-stopped
+    ports:
+      - 9001:9000
+    environment:
+      - MINIO_ACCESS_KEY=1BNVFC125YUTIA8X4EZ5
+      - MINIO_SECRET_KEY=KNBIVSXVSEQU8YN8TR2J9HGP2D6X9JZK2S2Vc1Pf
+    volumes:
+      - minio_destination_vol:/data
+  mongo:
+    container_name: mongo
+    image: mongo:4.0
+    restart: unless-stopped
+    command: mongod --smallfiles --oplogSize 128 --replSet rs0 --storageEngine=mmapv1
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_vol:/data/db
+  mongo-init-replica:
+    container_name: mongo-init-replica
+    image: mongo:4.0
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+          mongo mongo/rocketchat --eval \"
+            rs.initiate({
+              _id: 'rs0',
+              members: [ { _id: 0, host: 'localhost:27017' } ]})\" &&
+          s=$$? && break || s=$$?;
+          echo \"Tried $$i times. Waiting 5 secs...\";
+          sleep 5;
+        done; (exit $$s)"
+    depends_on:
+      - mongo
+volumes:
+  minio_source_vol:
+  minio_destination_vol:
+  mongo_vol:

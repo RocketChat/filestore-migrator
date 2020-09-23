@@ -1,36 +1,35 @@
-package fileStores
+package store
 
 import (
 	"io"
 	"os"
 
-	"github.com/RocketChat/MigrateFileStore/models"
+	"github.com/RocketChat/MigrateFileStore/pkg/migratestore/rocketchat"
 )
 
-// FileSystem is the Filesystem file Store
-type FileSystem struct {
+// FileSystemStorageProvider provides methods to use the local file system as a storage provider.
+type FileSystemStorageProvider struct {
 	Location         string
 	TempFileLocation string
 }
 
 // StoreType returns the name of the store
-func (f *FileSystem) StoreType() string {
+func (f *FileSystemStorageProvider) StoreType() string {
 	return "FileSystem"
 }
 
 // SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
-func (f *FileSystem) SetTempDirectory(dir string) {
+func (f *FileSystemStorageProvider) SetTempDirectory(dir string) {
 	f.TempFileLocation = dir
 }
 
-// Download will download the file to temp file store
-func (f *FileSystem) Download(fileCollection string, file models.File) (string, error) {
-
+// Download downloads a file from the storage provider and moves it to the temporary file store
+func (f *FileSystemStorageProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
 	sourcePath := f.Location + "/" + file.ID
 	destinationPath := f.TempFileLocation + "/" + file.ID
 
 	if _, err := os.Stat(sourcePath); os.IsNotExist(err) {
-		return "", models.ErrNotFound
+		return "", ErrNotFound
 	}
 
 	sF, err := os.Open(sourcePath)
@@ -54,8 +53,8 @@ func (f *FileSystem) Download(fileCollection string, file models.File) (string, 
 	return destinationPath, nil
 }
 
-// Upload will upload the file from given file path
-func (f *FileSystem) Upload(path string, filePath string, contentType string) error {
+// Upload uploads a file from given path to the storage provider
+func (f *FileSystemStorageProvider) Upload(path string, filePath string, contentType string) error {
 	destinationPath := f.Location + "/" + path
 
 	sF, err := os.Open(filePath)

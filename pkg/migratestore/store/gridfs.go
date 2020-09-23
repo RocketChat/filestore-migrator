@@ -1,39 +1,39 @@
-package fileStores
+package store
 
 import (
 	"io"
 	"os"
 
-	"github.com/RocketChat/MigrateFileStore/models"
+	"github.com/RocketChat/MigrateFileStore/pkg/migratestore/rocketchat"
 	mgo "gopkg.in/mgo.v2"
 )
 
-// GridFS is the GridFS file store
-type GridFS struct {
+// GridFSProvider provides methods to use GridFS as a storage provider.
+type GridFSProvider struct {
 	Database         string
 	Session          *mgo.Session
 	TempFileLocation string
 }
 
 // StoreType returns the name of the store
-func (g *GridFS) StoreType() string {
+func (g *GridFSProvider) StoreType() string {
 	return "GridFS"
 }
 
 // SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
-func (g *GridFS) SetTempDirectory(dir string) {
+func (g *GridFSProvider) SetTempDirectory(dir string) {
 	g.TempFileLocation = dir
 }
 
-// Download will download the file to temp file store
-func (g *GridFS) Download(fileCollection string, file models.File) (string, error) {
+// Download downloads a file from the storage provider and moves it to the temporary file store
+func (g *GridFSProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
 	sess := g.Session.Copy()
 	defer sess.Close()
 
 	gridFile, err := sess.DB(g.Database).GridFS(fileCollection).Open(file.ID)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return "", models.ErrNotFound
+			return "", ErrNotFound
 		}
 
 		return "", err
@@ -60,7 +60,7 @@ func (g *GridFS) Download(fileCollection string, file models.File) (string, erro
 	return filePath, err
 }
 
-// Upload will upload the file from given file path - not implemented
-func (g *GridFS) Upload(path string, filePath string, contentType string) error {
+// Upload uploads a file from given path to the storage provider (not implemented)
+func (g *GridFSProvider) Upload(path string, filePath string, contentType string) error {
 	return nil
 }

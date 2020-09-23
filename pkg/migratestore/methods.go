@@ -1,4 +1,4 @@
-package migratefiles
+package migratefilestore
 
 import (
 	"errors"
@@ -8,7 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/RocketChat/MigrateFileStore/models"
+	"github.com/RocketChat/MigrateFileStore/pkg/migratestore/rocketchat"
+	"github.com/RocketChat/MigrateFileStore/pkg/migratestore/store"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -58,7 +59,7 @@ func (m *Migrate) SetStoreName(storeName string) error {
 	return nil
 }
 
-func (m *Migrate) getFiles() ([]models.File, error) {
+func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 	if m.storeName == "" {
 		return nil, errors.New("no store Name")
 	}
@@ -103,7 +104,7 @@ func (m *Migrate) getFiles() ([]models.File, error) {
 
 	collection := db.C(fileCollection)
 
-	var files []models.File
+	var files []rocketchat.File
 
 	m.debugLog(fileCollection, m.sourceStore.StoreType()+":"+m.storeName)
 
@@ -149,7 +150,7 @@ func (m *Migrate) MigrateStore() error {
 
 		downloadedPath, err := m.sourceStore.Download(m.fileCollectionName, file)
 		if err != nil {
-			if err == models.ErrNotFound || m.skipErrors {
+			if err == store.ErrNotFound || m.skipErrors {
 				m.debugLog(fmt.Sprintf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name))
 				err = nil
 				continue
@@ -206,7 +207,7 @@ func (m *Migrate) MigrateStore() error {
 	return nil
 }
 
-func (m *Migrate) getObjectPath(file *models.File) string {
+func (m *Migrate) getObjectPath(file *rocketchat.File) string {
 	objectPath := ""
 
 	switch m.storeName {
@@ -224,27 +225,27 @@ func (m *Migrate) getObjectPath(file *models.File) string {
 	return objectPath
 }
 
-func (m *Migrate) fixFileForUpload(file *models.File, objectPath string) string {
+func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) string {
 	unset := ""
 
 	switch m.destinationStore.StoreType() {
 	case "AmazonS3":
-		file.AmazonS3 = models.AmazonS3{
+		file.AmazonS3 = rocketchat.AmazonS3{
 			Path: objectPath,
 		}
 
 		// Set to empty object so won't be saved back
 		unset = "GoogleStorage"
-		file.GoogleStorage = models.GoogleStorage{}
+		file.GoogleStorage = rocketchat.GoogleStorage{}
 
 	case "GoogleCloudStorage":
-		file.GoogleStorage = models.GoogleStorage{
+		file.GoogleStorage = rocketchat.GoogleStorage{
 			Path: objectPath,
 		}
 
 		// Set to empty object so won't be saved back
 		unset = "AmazonS3"
-		file.AmazonS3 = models.AmazonS3{}
+		file.AmazonS3 = rocketchat.AmazonS3{}
 	case "FileSystem":
 	default:
 	}
@@ -288,12 +289,12 @@ func (m *Migrate) DownloadAll() error {
 		m.debugLog(fmt.Sprintf("[%v/%v] Downloading %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
 
 		if !file.Complete {
-			fmt.Printf("[%v/%v] File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
+			fmt.Printf("[%v/%v] rocketchat.File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
 			continue
 		}
 
 		if _, err := m.sourceStore.Download(m.fileCollectionName, file); err != nil {
-			if err == models.ErrNotFound || m.skipErrors {
+			if err == store.ErrNotFound || m.skipErrors {
 				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name)
 				err = nil
 				continue
@@ -340,7 +341,7 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 		m.debugLog(fmt.Sprintf("[%v/%v] Uploading %s to: %s\n", index, len(files), file.Name, m.destinationStore.StoreType()))
 
 		if !file.Complete {
-			fmt.Printf("[%v/%v] File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
+			fmt.Printf("[%v/%v] rocketchat.File wasn't completed uploading for %s Skipping\n", index, len(files), file.Name)
 			continue
 		}
 

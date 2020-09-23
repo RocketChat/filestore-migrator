@@ -1,4 +1,4 @@
-package models
+package rocketchat
 
 import "time"
 
