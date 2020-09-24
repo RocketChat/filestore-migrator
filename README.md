@@ -1,10 +1,10 @@
 # **migratestore**
 
-**migratestore** is the tool officially supported by Rocket.Chat dedicated to migrate files uploaded to a Rocket.Chat instance between object storage providers. Currently we support as targets any object storage provider compatible with the S3 API, as well as, the local file system and Google Cloud Storage. GridFS is also compatible as a source target, but the support as destination is deprecated.
+**migratestore** is a tool to migrate files uploaded to a Rocket.Chat instance between object storage providers. Currently we support as targets any object storage provider compatible with the S3 API, as well as, the local file system and Google Cloud Storage. GridFS is also compatible as a source target, but the support as destination is deprecated.
 
 ## Installation
 
-Before you are able to run **migratestore**, make sure that you got a recent version of the `go` runtime installed and that you `$GOPATH` is in your OS system-wide `PATH`. Then, clone the repo to `$GOPATH/src/github.com/RocketChat/MigrateFileStore` or use `go get github.com/RocketChat/MigrateFileStore`. Now you only need to run the following commands on the tool source directory:
+If you are installing **migratestore** from source, make sure that you have a recent version of the `go` runtime installed and that you `$GOPATH` is in your OS system-wide `PATH`. Then, clone the repo to `$GOPATH/src/github.com/RocketChat/MigrateFileStore` or use `go get github.com/RocketChat/MigrateFileStore`. Now you only need to run the following commands on the tool source directory:
 
 ```
 make build
