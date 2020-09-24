@@ -20,7 +20,6 @@ func parseDatabase(url string) (*config.DatabaseConfig, error) {
 		ConnectionString: url,
 		Database:         url[strings.LastIndex(url, "/")+1 : len(url)],
 	}
-	fmt.Println(database)
 	return &database, nil
 }
 

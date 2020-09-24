@@ -11,7 +11,7 @@ clean:
 
 # Build the tool docker image.
 docker:
-	docker build -t migrate-file-store:${version} .
+	docker build -t ${binary_name}:${version} .
 
 # Build and execute the tool binary.
 run: build
