@@ -1,0 +1,21 @@
+database:
+  connectionString: "mongodb://127.0.0.1:27017/customer"
+  database: "customer"
+source:
+  type: GoogleStorage
+  GoogleStorage:
+    bucket: rc-cloud-{id}
+    jsonKey: |
+      {
+
+      }
+tempFileLocation: "files"
+destination:
+  type: "AmazonS3"
+  AmazonS3:
+    endpoint: "s3.amazonaws.com"
+    bucket: "rocketchat"
+    accessId: id
+    accessKey: key
+    region: us-east-1
+    useSSL: true
