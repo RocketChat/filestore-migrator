@@ -110,6 +110,8 @@ func parseTarget(name string, typ string, connstr string) (*config.MigrateTarget
 				},
 			}
 			return &target, nil
+		case "filesystem":
+			fallthrough
 		case "fs":
 			target := config.MigrateTarget{
 				Type: "FileSystem",
