@@ -323,6 +323,12 @@ func connectDB(connectionstring string) (*mgo.Session, error) {
 		connectionstring = strings.Replace(connectionstring, "?readPreference=secondary", "", -1)
 		secondaryPreferred = true
 	}
+	
+	if strings.Contains(connectionstring, "readPreference=secondaryPreferred") {
+		connectionstring = strings.Replace(connectionstring, "&readPreference=secondaryPreferred", "", -1)
+		connectionstring = strings.Replace(connectionstring, "?readPreference=secondaryPreferred", "", -1)
+		secondaryPreferred = true
+	}
 
 	dialInfo, err := mgo.ParseURL(connectionstring)
 	if err != nil {
