@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"io"
 	"os"
 
@@ -76,4 +77,8 @@ func (f *FileSystemStorageProvider) Upload(path string, filePath string, content
 	}
 
 	return nil
+}
+
+func (s *FileSystemStorageProvider) Delete(file rocketchat.File) error {
+	return errors.New("delete object method not implemented")
 }
