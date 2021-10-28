@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"io"
 	"os"
 
@@ -63,4 +64,8 @@ func (g *GridFSProvider) Download(fileCollection string, file rocketchat.File) (
 // Upload uploads a file from given path to the storage provider (not implemented)
 func (g *GridFSProvider) Upload(path string, filePath string, contentType string) error {
 	return nil
+}
+
+func (s *GridFSProvider) Delete(file rocketchat.File) error {
+	return errors.New("delete object method not implemented")
 }

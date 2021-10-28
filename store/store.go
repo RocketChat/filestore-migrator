@@ -21,4 +21,6 @@ type Provider interface {
 	Download(fileCollection string, file rocketchat.File) (string, error)
 	// SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
 	SetTempDirectory(subdir string)
+
+	Delete(file rocketchat.File) error
 }

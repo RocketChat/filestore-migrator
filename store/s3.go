@@ -78,3 +78,26 @@ func (s *S3Provider) Upload(objectPath string, filePath string, contentType stri
 
 	return nil
 }
+
+// Delete permanentely permanentely destroys an object specified by the
+// rocketFile.Amazons3.filepath
+func (s *S3Provider) Delete(file rocketchat.File) error {
+	minioClient, err := minio.NewWithRegion(
+		s.Endpoint,
+		s.AccessID,
+		s.AccessKey,
+		s.UseSSL,
+		s.Region,
+	)
+	if err != nil {
+		return err
+	}
+
+	// validate the existance of a file before deleting it
+	_, err = minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
+	if err != nil {
+		return err
+	}
+
+	return minioClient.RemoveObject(s.Bucket, file.AmazonS3.Path)
+}
