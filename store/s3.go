@@ -3,7 +3,9 @@ package store
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"strings"
 
 	"github.com/RocketChat/filestore-migrator/rocketchat"
 	minio "github.com/minio/minio-go"
@@ -93,11 +95,34 @@ func (s *S3Provider) Delete(file rocketchat.File) error {
 		return err
 	}
 
-	// validate the existance of a file before deleting it
-	_, err = minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
-	if err != nil {
-		return err
+	// removes the bucket name from the Path if it exists
+	objectPrefix := strings.TrimPrefix(file.AmazonS3.Path, s.Bucket)
+
+	// chan of objects withing the deployment object
+	objectsCh := make(chan string)
+
+	//send object names thata are to be removed to objectsCh
+	go func() {
+		defer close(objectsCh)
+		recursive := true
+
+		for object := range minioClient.ListObjects(s.Bucket, objectPrefix, recursive, nil) {
+			if object.Err != nil {
+				log.Println(object.Err)
+			}
+
+			objectsCh <- object.Key
+		}
+	}()
+
+	log.Println("Deleting all the objects of the deployment")
+	for minioErr := range minioClient.RemoveObjects(s.Bucket, objectsCh) {
+		// if it fails at one object if stops the subsequent ones
+		if minioErr.Err != nil {
+			return minioErr.Err
+		}
 	}
 
-	return minioClient.RemoveObject(s.Bucket, file.AmazonS3.Path)
+	log.Println("Deleting the deployment object itself")
+	return minioClient.RemoveObject(s.Bucket, file.AmazonS3.Path); err != nil {
 }
