@@ -124,5 +124,5 @@ func (s *S3Provider) Delete(file rocketchat.File) error {
 	}
 
 	log.Println("Deleting the deployment object itself")
-	return minioClient.RemoveObject(s.Bucket, file.AmazonS3.Path); err != nil {
+	return minioClient.RemoveObject(s.Bucket, file.AmazonS3.Path)
 }
