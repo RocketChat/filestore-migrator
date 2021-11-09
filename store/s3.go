@@ -40,6 +40,7 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 	minioClient, err := minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
 		Secure: s.UseSSL,
+		Region: s.Region,
 	})
 	//minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
@@ -75,6 +76,7 @@ func (s *S3Provider) Upload(objectPath string, filePath string, contentType stri
 	minioClient, err := minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
 		Secure: s.UseSSL,
+		Region: s.Region,
 	})
 	if err != nil {
 		return err
@@ -97,6 +99,7 @@ func (s *S3Provider) Delete(file rocketchat.File) error {
 	minioClient, err := minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
 		Secure: s.UseSSL,
+		Region: s.Region,
 	})
 	if err != nil {
 		return err
