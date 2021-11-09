@@ -42,7 +42,6 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 		Secure: s.UseSSL,
 		Region: s.Region,
 	})
-	//minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +49,12 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 	filePath := s.TempFileLocation + "/" + file.ID
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		object, err := minioClient.GetObject(context.Background(), s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
+		object, err := minioClient.GetObject(
+			context.Background(),
+			s.Bucket,
+			file.AmazonS3.Path,
+			minio.GetObjectOptions{},
+		)
 		if err != nil {
 			return "", err
 		}
@@ -82,9 +86,15 @@ func (s *S3Provider) Upload(objectPath string, filePath string, contentType stri
 		return err
 	}
 
-	_, err = minioClient.FPutObject(context.Background(), s.Bucket, objectPath, filePath, minio.PutObjectOptions{
-		ContentType: contentType,
-	})
+	_, err = minioClient.FPutObject(
+		context.Background(),
+		s.Bucket,
+		objectPath,
+		filePath,
+		minio.PutObjectOptions{
+			ContentType: contentType,
+		},
+	)
 	if err != nil {
 		fmt.Println(err)
 		return err
