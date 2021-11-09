@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -8,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/RocketChat/filestore-migrator/rocketchat"
-	minio "github.com/minio/minio-go"
+	minio "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/tags"
 )
 
 // S3Provider provides methods to use any S3 complaint provider as a storage provider.
@@ -34,7 +37,11 @@ func (s *S3Provider) SetTempDirectory(dir string) {
 
 // Download will download the file to temp file store
 func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (string, error) {
-	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
+	minioClient, err := minio.New(s.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
+		Secure: s.UseSSL,
+	})
+	//minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
 	if err != nil {
 		return "", err
 	}
@@ -42,7 +49,7 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 	filePath := s.TempFileLocation + "/" + file.ID
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		object, err := minioClient.GetObject(s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
+		object, err := minioClient.GetObject(context.Background(), s.Bucket, file.AmazonS3.Path, minio.GetObjectOptions{})
 		if err != nil {
 			return "", err
 		}
@@ -65,12 +72,15 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 
 // Upload will upload the file from given file path
 func (s *S3Provider) Upload(objectPath string, filePath string, contentType string) error {
-	minioClient, err := minio.NewWithRegion(s.Endpoint, s.AccessID, s.AccessKey, s.UseSSL, s.Region)
+	minioClient, err := minio.New(s.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
+		Secure: s.UseSSL,
+	})
 	if err != nil {
 		return err
 	}
 
-	_, err = minioClient.FPutObject(s.Bucket, objectPath, filePath, minio.PutObjectOptions{
+	_, err = minioClient.FPutObject(context.Background(), s.Bucket, objectPath, filePath, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {
@@ -84,13 +94,10 @@ func (s *S3Provider) Upload(objectPath string, filePath string, contentType stri
 // Delete permanentely permanentely destroys an object specified by the
 // rocketFile.Amazons3.filepath
 func (s *S3Provider) Delete(file rocketchat.File) error {
-	minioClient, err := minio.NewWithRegion(
-		s.Endpoint,
-		s.AccessID,
-		s.AccessKey,
-		s.UseSSL,
-		s.Region,
-	)
+	minioClient, err := minio.New(s.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
+		Secure: s.UseSSL,
+	})
 	if err != nil {
 		return err
 	}
@@ -106,7 +113,14 @@ func (s *S3Provider) Delete(file rocketchat.File) error {
 		defer close(objectsCh)
 		recursive := true
 
-		for object := range minioClient.ListObjects(s.Bucket, objectPrefix, recursive, nil) {
+		for object := range minioClient.ListObjects(
+			context.Background(),
+			s.Bucket,
+			minio.ListObjectsOptions{
+				Prefix:    objectPrefix,
+				Recursive: recursive,
+			},
+		) {
 			if object.Err != nil {
 				log.Println(object.Err)
 			}
@@ -115,14 +129,34 @@ func (s *S3Provider) Delete(file rocketchat.File) error {
 		}
 	}()
 
-	log.Println("Deleting all the objects of the deployment")
-	for minioErr := range minioClient.RemoveObjects(s.Bucket, objectsCh) {
-		// if it fails at one object if stops the subsequent ones
-		if minioErr.Err != nil {
-			return minioErr.Err
+	// tags that will mark objects for deletion
+	objTags, err := tags.NewTags(map[string]string{"delete": "true"}, true)
+	if err != nil {
+		return err
+	}
+
+	log.Println("marking all the objects of the deployment for deletion")
+	for objName := range objectsCh {
+		err := minioClient.PutObjectTagging(
+			context.Background(),
+			s.Bucket,
+			objName,
+			objTags,
+			// specifies version of the object, not used yet
+			minio.PutObjectTaggingOptions{VersionID: ""},
+		)
+		if err != nil {
+			return err
 		}
 	}
 
 	log.Println("Deleting the deployment object itself")
-	return minioClient.RemoveObject(s.Bucket, file.AmazonS3.Path)
+	return minioClient.PutObjectTagging(
+		context.Background(),
+		s.Bucket,
+		file.AmazonS3.Path,
+		objTags,
+		// specifies version of the object
+		minio.PutObjectTaggingOptions{VersionID: ""},
+	)
 }
