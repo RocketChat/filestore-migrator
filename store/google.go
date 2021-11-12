@@ -110,6 +110,6 @@ func (g *GoogleStorageProvider) Upload(path string, filePath string, contentType
 	return nil
 }
 
-func (s *GoogleStorageProvider) Delete(file rocketchat.File) error {
+func (s *GoogleStorageProvider) Delete(file rocketchat.File, permanentelyDelete bool) error {
 	return errors.New("delete object method not implemented")
 }

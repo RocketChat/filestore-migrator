@@ -105,7 +105,7 @@ func (s *S3Provider) Upload(objectPath string, filePath string, contentType stri
 
 // Delete permanentely permanentely destroys an object specified by the
 // rocketFile.Amazons3.filepath
-func (s *S3Provider) Delete(file rocketchat.File) error {
+func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error {
 	minioClient, err := minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
 		Secure: s.UseSSL,
@@ -148,6 +148,32 @@ func (s *S3Provider) Delete(file rocketchat.File) error {
 		return err
 	}
 
+	if permanentelyDelete {
+		log.Println("permanentely deleting all the objects of the deployment")
+		for objName := range objectsCh {
+			err := minioClient.RemoveObject(
+				context.Background(),
+				s.Bucket,
+				objName,
+				minio.RemoveObjectOptions{})
+			if err != nil {
+				return err
+			}
+
+		}
+		log.Println("permanentely deleting the deployment object itself")
+		return minioClient.PutObjectTagging(
+			context.Background(),
+			s.Bucket,
+			file.AmazonS3.Path,
+			objTags,
+			// specifies version of the object
+			minio.PutObjectTaggingOptions{VersionID: ""},
+		)
+
+	}
+
+	// execute only if !permanentelyDelete
 	log.Println("marking all the objects of the deployment for deletion")
 	for objName := range objectsCh {
 		err := minioClient.PutObjectTagging(

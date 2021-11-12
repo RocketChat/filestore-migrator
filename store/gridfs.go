@@ -66,6 +66,6 @@ func (g *GridFSProvider) Upload(path string, filePath string, contentType string
 	return nil
 }
 
-func (s *GridFSProvider) Delete(file rocketchat.File) error {
+func (s *GridFSProvider) Delete(file rocketchat.File, permanentelyDelete bool) error {
 	return errors.New("delete object method not implemented")
 }
