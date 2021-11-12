@@ -22,5 +22,5 @@ type Provider interface {
 	// SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
 	SetTempDirectory(subdir string)
 
-	Delete(file rocketchat.File) error
+	Delete(file rocketchat.File, permanentelyDelete bool) error
 }

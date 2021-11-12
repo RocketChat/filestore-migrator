@@ -79,6 +79,6 @@ func (f *FileSystemStorageProvider) Upload(path string, filePath string, content
 	return nil
 }
 
-func (s *FileSystemStorageProvider) Delete(file rocketchat.File) error {
+func (s *FileSystemStorageProvider) Delete(file rocketchat.File, permanentelyDelete bool) error {
 	return errors.New("delete object method not implemented")
 }
