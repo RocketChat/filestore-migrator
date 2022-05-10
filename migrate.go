@@ -136,8 +136,10 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 
 			config.Source.FileSystem.Location = strings.TrimSuffix(config.Source.FileSystem.Location, "/")
 
-			if _, err := os.Stat(config.Source.FileSystem.Location); os.IsNotExist(err) {
-				return nil, errors.New("Filesystem source location does not exist or is unaccessible")
+			if !config.Source.ReferenceOnly {
+				if _, err := os.Stat(config.Source.FileSystem.Location); os.IsNotExist(err) {
+					return nil, errors.New("Filesystem source location does not exist or is unaccessible")
+				}
 			}
 
 			sourceStore := &store.FileSystemStorageProvider{
