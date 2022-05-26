@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -42,6 +43,7 @@ func parseTarget(name string, typ string, connstr string, action string) (*confi
 			}
 
 			if name == "source" && action == "upload" {
+				target.ReferenceOnly = true
 				return &target, nil
 			}
 
@@ -102,6 +104,7 @@ func parseTarget(name string, typ string, connstr string, action string) (*confi
 			}
 
 			if name == "source" && action == "upload" {
+				target.ReferenceOnly = true
 				return &target, nil
 			}
 
@@ -191,12 +194,15 @@ func Parse(configFile string,
 
 			configuration.Source = *target
 		} else {
+			log.Println("Connecting to database to detect source upload config")
 			target, err := pkg.GetRocketChatStore(configuration.Database)
 			if err != nil {
 				panic(err)
 			}
 			configuration.Source = *target
 		}
+
+		log.Printf("Source set as: %s", configuration.Source.Type)
 
 		if !detectDestination {
 			target, err := parseTarget("destination", destinationType, destinationURL, action)
@@ -205,12 +211,16 @@ func Parse(configFile string,
 			}
 			configuration.Destination = *target
 		} else {
+			log.Println("Connecting to database to detect destination upload config")
+
 			target, err := pkg.GetRocketChatStore(configuration.Database)
 			if err != nil {
 				panic(err)
 			}
 			configuration.Destination = *target
 		}
+
+		log.Printf("Source set as: %s", configuration.Destination.Type)
 
 		return configuration, nil
 	}
