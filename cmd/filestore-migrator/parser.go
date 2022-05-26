@@ -220,7 +220,7 @@ func Parse(configFile string,
 			configuration.Destination = *target
 		}
 
-		log.Printf("Source set as: %s", configuration.Destination.Type)
+		log.Printf("Destination set as: %s", configuration.Destination.Type)
 
 		return configuration, nil
 	}
