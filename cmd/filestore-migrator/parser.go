@@ -23,7 +23,7 @@ func parseDatabase(url string) (*config.DatabaseConfig, error) {
 	return &database, nil
 }
 
-func parseTarget(name string, typ string, connstr string) (*config.MigrateTarget, error) {
+func parseTarget(name string, typ string, connstr string, action string) (*config.MigrateTarget, error) {
 	if typ != "" && connstr != "" {
 		if name == "destination" && typ == "gridfs" {
 			err := errors.New("You cannot use gridfs as a destination target")
@@ -37,6 +37,14 @@ func parseTarget(name string, typ string, connstr string) (*config.MigrateTarget
 			}
 			return &target, nil
 		case "s3":
+			target := config.MigrateTarget{
+				Type: "AmazonS3",
+			}
+
+			if name == "source" && action == "upload" {
+				return &target, nil
+			}
+
 			urlInfo, err := url.Parse(connstr)
 			if err != nil {
 				panic(err)
@@ -74,19 +82,25 @@ func parseTarget(name string, typ string, connstr string) (*config.MigrateTarget
 			if err != nil {
 				panic(err)
 			}
-			target := config.MigrateTarget{
-				Type: "AmazonS3",
-				AmazonS3: config.MigrateTargetS3{
-					Endpoint:  endpoint,
-					Bucket:    bucket,
-					AccessID:  accessID,
-					AccessKey: accessKey,
-					Region:    region,
-					UseSSL:    ssl,
-				},
+			target.AmazonS3 = config.MigrateTargetS3{
+				Endpoint:  endpoint,
+				Bucket:    bucket,
+				AccessID:  accessID,
+				AccessKey: accessKey,
+				Region:    region,
+				UseSSL:    ssl,
 			}
+
 			return &target, nil
 		case "google":
+			target := config.MigrateTarget{
+				Type: "GoogleStorage",
+			}
+
+			if name == "source" && action == "upload" {
+				return &target, nil
+			}
+
 			info := strings.Split(connstr, "/")
 			if len(info) != 2 {
 				err := errors.New("The informed Google Cloud connection string doesn't respect the tool pattern")
@@ -102,13 +116,12 @@ func parseTarget(name string, typ string, connstr string) (*config.MigrateTarget
 				err := errors.New("The informed Google Cloud connection string doesn't contain the bucket field")
 				return nil, err
 			}
-			target := config.MigrateTarget{
-				Type: "GoogleStorage",
-				GoogleStorage: config.MigrateTargetGoogleStorage{
-					JSONKey: key,
-					Bucket:  bucket,
-				},
+
+			target.GoogleStorage = config.MigrateTargetGoogleStorage{
+				JSONKey: key,
+				Bucket:  bucket,
 			}
+
 			return &target, nil
 		case "filesystem":
 			fallthrough
@@ -140,7 +153,8 @@ func Parse(configFile string,
 	destinationType string,
 	destinationURL string,
 	tempLocation string,
-	verbose bool) (*config.Config, error) {
+	verbose bool,
+	action string) (*config.Config, error) {
 	if configFile == "" {
 		configuration := &config.Config{}
 		configuration.DebugMode = verbose
@@ -158,10 +172,11 @@ func Parse(configFile string,
 		}
 
 		if !detectSource {
-			target, err := parseTarget("source", sourceType, sourceURL)
+			target, err := parseTarget("source", sourceType, sourceURL, action)
 			if err != nil {
 				panic(err)
 			}
+
 			configuration.Source = *target
 		} else {
 			target, err := pkg.GetRocketChatStore(configuration.Database)
@@ -172,7 +187,7 @@ func Parse(configFile string,
 		}
 
 		if !detectDestination {
-			target, err := parseTarget("destination", destinationType, destinationURL)
+			target, err := parseTarget("destination", destinationType, destinationURL, action)
 			if err != nil {
 				panic(err)
 			}

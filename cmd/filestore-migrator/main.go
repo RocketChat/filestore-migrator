@@ -24,6 +24,15 @@ func main() {
 
 	flag.Parse()
 
+	// We don't need the source config details. They will have to tell us
+	if *action == "upload" {
+		*detectSource = false
+	}
+
+	if *action == "upload" && *sourceType == "" {
+		panic("When specifying upload action you need to provide at least the sourceType")
+	}
+
 	config, err := Parse(*configFile,
 		*databaseURL,
 		*detectSource,
@@ -33,7 +42,8 @@ func main() {
 		*destinationType,
 		*destinationURL,
 		*tempLocation,
-		*verbose)
+		*verbose,
+		*action)
 	if err != nil {
 		panic(err)
 	}
