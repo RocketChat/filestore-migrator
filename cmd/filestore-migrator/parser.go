@@ -24,7 +24,7 @@ func parseDatabase(url string) (*config.DatabaseConfig, error) {
 }
 
 func parseTarget(name string, typ string, connstr string, action string) (*config.MigrateTarget, error) {
-	if typ != "" && connstr != "" {
+	if typ != "" {
 		if name == "destination" && typ == "gridfs" {
 			err := errors.New("You cannot use gridfs as a destination target")
 			return nil, err
@@ -43,6 +43,10 @@ func parseTarget(name string, typ string, connstr string, action string) (*confi
 
 			if name == "source" && action == "upload" {
 				return &target, nil
+			}
+
+			if connstr == "" {
+				return nil, fmt.Errorf("The %s target information is incomplete", name)
 			}
 
 			urlInfo, err := url.Parse(connstr)
@@ -101,6 +105,10 @@ func parseTarget(name string, typ string, connstr string, action string) (*confi
 				return &target, nil
 			}
 
+			if connstr == "" {
+				return nil, fmt.Errorf("The %s target information is incomplete", name)
+			}
+
 			info := strings.Split(connstr, "/")
 			if len(info) != 2 {
 				err := errors.New("The informed Google Cloud connection string doesn't respect the tool pattern")
@@ -126,6 +134,10 @@ func parseTarget(name string, typ string, connstr string, action string) (*confi
 		case "filesystem":
 			fallthrough
 		case "fs":
+			if connstr == "" {
+				return nil, fmt.Errorf("The %s target information is incomplete", name)
+			}
+
 			target := config.MigrateTarget{
 				Type: "FileSystem",
 				FileSystem: config.MigrateTargetFileSystem{
