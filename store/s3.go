@@ -11,7 +11,6 @@ import (
 	"github.com/RocketChat/filestore-migrator/rocketchat"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio-go/v7/pkg/tags"
 )
 
 // S3Provider provides methods to use any S3 complaint provider as a storage provider.
@@ -115,7 +114,6 @@ func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error
 		return err
 	}
 
-	log.Printf("S3Provider:\n %+v\n", s)
 	log.Printf("file.AmazonS3:\n %+v\n", file.AmazonS3)
 
 	// removes the bucket name from the Path if it exists
@@ -143,16 +141,11 @@ func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error
 				log.Printf("object error: %v\n", object.Err)
 			}
 
-			objectsCh <- object.Key
+			if permanentelyDelete {
+				objectsCh <- object.Key
+			}
 		}
 	}()
-
-	// tags that will mark objects for deletion
-	// TODO: remove
-	objTags, err := tags.NewTags(map[string]string{"delete": "true"}, true)
-	if err != nil {
-		return err
-	}
 
 	if permanentelyDelete {
 		log.Println("permanentely deleting all the objects of the deployment")
@@ -167,51 +160,6 @@ func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error
 			}
 
 		}
-		log.Println("permanentely deleting the deployment object itself")
-
-		if err := minioClient.PutObjectTagging(
-			context.Background(),
-			s.Bucket,
-			file.AmazonS3.Path,
-			objTags,
-			// specifies version of the object
-			minio.PutObjectTaggingOptions{VersionID: ""},
-		); err != nil {
-			return fmt.Errorf("could not put object tagging: %s: %s: %w", s.Bucket, file.AmazonS3.Path, err)
-		}
-
-		return nil
-
-	}
-
-	// execute only if !permanentelyDelete
-	// TODO: remove
-	log.Println("marking all the objects of the deployment for deletion")
-	for objName := range objectsCh {
-		if err := minioClient.PutObjectTagging(
-			context.Background(),
-			s.Bucket,
-			objName,
-			objTags,
-			// specifies version of the object, not used yet
-			minio.PutObjectTaggingOptions{VersionID: ""},
-		); err != nil {
-			return fmt.Errorf("could not put object tagging: %s: %s: %w", s.Bucket, objName, err)
-		}
-	}
-
-	// TODO: remove
-	log.Println("Deleting the deployment object itself")
-
-	if err := minioClient.PutObjectTagging(
-		context.Background(),
-		s.Bucket,
-		file.AmazonS3.Path,
-		objTags,
-		// specifies version of the object
-		minio.PutObjectTaggingOptions{VersionID: ""},
-	); err != nil {
-		return fmt.Errorf("could not put object tagging: %s: %s: %w", s.Bucket, file.AmazonS3.Path, err)
 	}
 
 	return nil
