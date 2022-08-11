@@ -11,7 +11,6 @@ import (
 	"github.com/RocketChat/filestore-migrator/rocketchat"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio-go/v7/pkg/tags"
 )
 
 // S3Provider provides methods to use any S3 complaint provider as a storage provider.
@@ -115,6 +114,8 @@ func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error
 		return err
 	}
 
+	log.Printf("file.AmazonS3:\n %+v\n", file.AmazonS3)
+
 	// removes the bucket name from the Path if it exists
 	objectPrefix := strings.TrimPrefix(file.AmazonS3.Path, s.Bucket)
 
@@ -134,68 +135,32 @@ func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error
 				Recursive: recursive,
 			},
 		) {
+			log.Printf("list objects: %s: %s\n", objectPrefix, object.Key)
+
 			if object.Err != nil {
-				log.Println(object.Err)
+				log.Printf("object error: %v\n", object.Err)
 			}
 
-			objectsCh <- object.Key
+			if permanentelyDelete {
+				objectsCh <- object.Key
+			}
 		}
 	}()
-
-	// tags that will mark objects for deletion
-	objTags, err := tags.NewTags(map[string]string{"delete": "true"}, true)
-	if err != nil {
-		return err
-	}
 
 	if permanentelyDelete {
 		log.Println("permanentely deleting all the objects of the deployment")
 		for objName := range objectsCh {
-			err := minioClient.RemoveObject(
+			if err := minioClient.RemoveObject(
 				context.Background(),
 				s.Bucket,
 				objName,
-				minio.RemoveObjectOptions{})
-			if err != nil {
-				return err
+				minio.RemoveObjectOptions{},
+			); err != nil {
+				return fmt.Errorf("could not remove object: %s: %s: %w", s.Bucket, objName, err)
 			}
 
 		}
-		log.Println("permanentely deleting the deployment object itself")
-		return minioClient.PutObjectTagging(
-			context.Background(),
-			s.Bucket,
-			file.AmazonS3.Path,
-			objTags,
-			// specifies version of the object
-			minio.PutObjectTaggingOptions{VersionID: ""},
-		)
-
 	}
 
-	// execute only if !permanentelyDelete
-	log.Println("marking all the objects of the deployment for deletion")
-	for objName := range objectsCh {
-		err := minioClient.PutObjectTagging(
-			context.Background(),
-			s.Bucket,
-			objName,
-			objTags,
-			// specifies version of the object, not used yet
-			minio.PutObjectTaggingOptions{VersionID: ""},
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.Println("Deleting the deployment object itself")
-	return minioClient.PutObjectTagging(
-		context.Background(),
-		s.Bucket,
-		file.AmazonS3.Path,
-		objTags,
-		// specifies version of the object
-		minio.PutObjectTaggingOptions{VersionID: ""},
-	)
+	return nil
 }
