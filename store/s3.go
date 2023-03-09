@@ -141,6 +141,10 @@ func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error
 				log.Printf("object error: %v\n", object.Err)
 			}
 
+			if object.Key == "" {
+				continue
+			}
+
 			if permanentelyDelete {
 				objectsCh <- object.Key
 			}
