@@ -218,6 +218,8 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 	return migrate, nil
 }
 
+var ErrNoJsonKey = errors.New("no-json-key")
+
 // GetRocketChatStore uses database to build source Store from settings
 func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, error) {
 	session, err := connectDB(dbConfig.ConnectionString)
@@ -304,7 +306,7 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 		//this is a weird one
 		// currently a workaround, that asks for a json key file to be downloaded first
 		// returns an error but appropriate consumer should catch and fix
-		return sourceStore, errors.New("no-json-key")
+		return sourceStore, ErrNoJsonKey
 
 	case "FileSystem":
 		sourceStore.Type = "FileSystem"
