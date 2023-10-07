@@ -18,10 +18,8 @@ func parseDatabase(url string) (*config.DatabaseConfig, error) {
 		return nil, err
 	}
 
-	_dbLastIndex := -1
-	if strings.ContainsRune(url, '?') {
-		_dbLastIndex = strings.IndexRune(url, '?')
-	} else {
+	_dbLastIndex := strings.IndexRune(url, '?')
+	if _dbLastIndex == -1 {
 		_dbLastIndex = len(url)
 	}
 
