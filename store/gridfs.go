@@ -2,12 +2,9 @@ package store
 
 import (
 	"errors"
-	"io"
-	"os"
 
 	"github.com/RocketChat/filestore-migrator/rocketchat"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 // GridFSProvider provides methods to use GridFS as a storage provider.
