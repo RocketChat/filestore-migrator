@@ -11,8 +11,8 @@ import (
 
 	"github.com/RocketChat/filestore-migrator/rocketchat"
 	"github.com/RocketChat/filestore-migrator/store"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type rocketChatSetting struct {
@@ -113,7 +113,7 @@ func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 	}
 
 	if cursor, err := collection.Find(context.TODO(), query); err != nil {
-		if err == mgo.ErrNotFound {
+		if err == mongo.ErrNoDocuments {
 			return nil, errors.New("No files found")
 		}
 

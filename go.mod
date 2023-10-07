@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	cloud.google.com/go v0.49.0 // indirect
-	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/minio/minio-go/v7 v7.0.15
 	github.com/smartystreets/goconvey v1.7.2 // indirect
