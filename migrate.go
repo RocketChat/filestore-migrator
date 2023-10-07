@@ -307,7 +307,7 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 
 		sourceStore.GoogleStorage.JSONKey = settingValue.Value
 
-		break
+		return sourceStore, nil
 
 	/*case "GoogleCloudStorage":
 	sourceStore.Type = "GoogleStorage"*/
