@@ -22,6 +22,8 @@ func main() {
 	skipErrors := flag.Bool("skipErrors", false, "Skip on error")
 	verbose := flag.Bool("verbose", true, "Enable verbose logs")
 
+	dryRun := flag.Bool("dry-run", false, "Don't act on anything, make sure connectins are all working")
+
 	flag.Parse()
 
 	// We don't need the source config details. They will have to tell us
@@ -43,6 +45,7 @@ func main() {
 		*destinationURL,
 		*tempLocation,
 		*verbose,
+		*dryRun,
 		*action)
 	if err != nil {
 		panic(err)

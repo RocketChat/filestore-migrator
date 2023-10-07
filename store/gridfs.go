@@ -6,13 +6,14 @@ import (
 	"os"
 
 	"github.com/RocketChat/filestore-migrator/rocketchat"
-	mgo "gopkg.in/mgo.v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 // GridFSProvider provides methods to use GridFS as a storage provider.
 type GridFSProvider struct {
 	Database         string
-	Session          *mgo.Session
+	Session          mongo.Session
 	TempFileLocation string
 }
 
@@ -28,37 +29,37 @@ func (g *GridFSProvider) SetTempDirectory(dir string) {
 
 // Download downloads a file from the storage provider and moves it to the temporary file store
 func (g *GridFSProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
-	sess := g.Session.Copy()
-	defer sess.Close()
+	// FIXME implement gridfs download
+	/* 	gridfs.
+	   	gridFile, err := sess.DB(g.Database).GridFS(fileCollection).Open(file.ID)
+	   	if err != nil {
+	   		if err == mgo.ErrNotFound {
+	   			return "", ErrNotFound
+	   		}
 
-	gridFile, err := sess.DB(g.Database).GridFS(fileCollection).Open(file.ID)
-	if err != nil {
-		if err == mgo.ErrNotFound {
-			return "", ErrNotFound
-		}
+	   		return "", err
+	   	}
 
-		return "", err
-	}
+	   	defer gridFile.Close()
 
-	defer gridFile.Close()
+	   	filePath := g.TempFileLocation + "/" + file.ID
 
-	filePath := g.TempFileLocation + "/" + file.ID
+	   	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	   		f, err := os.Create(filePath)
+	   		if err != nil {
+	   			return "", err
+	   		}
 
-		f, err := os.Create(filePath)
-		if err != nil {
-			return "", err
-		}
+	   		defer f.Close()
 
-		defer f.Close()
+	   		if _, err = io.Copy(f, gridFile); err != nil {
+	   			return "", err
+	   		}
+	   	}
 
-		if _, err = io.Copy(f, gridFile); err != nil {
-			return "", err
-		}
-	}
-
-	return filePath, err
+	   	return filePath, err */
+	return "", nil
 }
 
 // Upload uploads a file from given path to the storage provider (not implemented)

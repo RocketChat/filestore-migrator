@@ -17,9 +17,17 @@ func parseDatabase(url string) (*config.DatabaseConfig, error) {
 		err := errors.New("The Rocket.Chat database connection information must be provided")
 		return nil, err
 	}
+
+	_dbLastIndex := -1
+	if strings.ContainsRune(url, '?') {
+		_dbLastIndex = strings.IndexRune(url, '?')
+	} else {
+		_dbLastIndex = len(url)
+	}
+
 	database := config.DatabaseConfig{
 		ConnectionString: url,
-		Database:         url[strings.LastIndex(url, "/")+1 : len(url)],
+		Database:         url[strings.LastIndex(url, "/")+1 : _dbLastIndex],
 	}
 	return &database, nil
 }
@@ -169,9 +177,10 @@ func Parse(configFile string,
 	destinationURL string,
 	tempLocation string,
 	verbose bool,
+	dryRun bool,
 	action string) (*config.Config, error) {
 	if configFile == "" {
-		configuration := &config.Config{}
+		configuration := &config.Config{DryRun: dryRun}
 		configuration.DebugMode = verbose
 		configuration.TempFileLocation = tempLocation
 
