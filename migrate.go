@@ -301,16 +301,10 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 
 		sourceStore.GoogleStorage.Bucket = settingValue.Value
 
-		if err := settingsCollection.FindOne(context.TODO(), bson.M{"_id": "FileUpload_GoogleStorage_Secret"}).Decode(&settingValue); err != nil {
-			return nil, err
-		}
-
-		sourceStore.GoogleStorage.JSONKey = settingValue.Value
-
-		return sourceStore, nil
-
-	/*case "GoogleCloudStorage":
-	sourceStore.Type = "GoogleStorage"*/
+		//this is a weird one
+		// currently a workaround, that asks for a json key file to be downloaded first
+		// returns an error but appropriate consumer should catch and fix
+		return sourceStore, errors.New("no-json-key")
 
 	case "FileSystem":
 		sourceStore.Type = "FileSystem"
