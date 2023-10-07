@@ -281,10 +281,6 @@ func (m *Migrate) DownloadAll() error {
 
 	m.debugLog(fmt.Sprintf("Found %v files\n", len(files)))
 
-	if m.dryRun {
-		return nil
-	}
-
 	for i, file := range files {
 		index := i + 1 // for logs
 

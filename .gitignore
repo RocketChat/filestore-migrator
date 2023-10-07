@@ -2,3 +2,4 @@ vendor
 files
 config.yaml
 filestore-migrator
+!filestore-migrator/

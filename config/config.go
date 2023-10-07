@@ -17,8 +17,6 @@ type Config struct {
 	TempFileLocation string         `yaml:"tempFileLocation"`
 	DebugMode        bool           `yaml:"debugMode"`
 	FileDelay        string         `yaml:"fileDelay"`
-
-	DryRun bool
 }
 
 // DatabaseConfig configuration to connect to database

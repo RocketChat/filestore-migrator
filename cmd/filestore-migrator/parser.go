@@ -177,10 +177,9 @@ func Parse(configFile string,
 	destinationURL string,
 	tempLocation string,
 	verbose bool,
-	dryRun bool,
 	action string) (*config.Config, error) {
 	if configFile == "" {
-		configuration := &config.Config{DryRun: dryRun}
+		configuration := &config.Config{}
 		configuration.DebugMode = verbose
 		configuration.TempFileLocation = tempLocation
 

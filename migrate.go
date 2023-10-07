@@ -31,8 +31,6 @@ type Migrate struct {
 	tempFileLocation   string
 	fileDelay          time.Duration
 	debug              bool
-
-	dryRun bool
 }
 
 // New takes the config and returns an initialized Migrate ready to begin migrations
@@ -71,28 +69,19 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 		tempFileLocation: config.TempFileLocation,
 		fileDelay:        fileDelay,
 		debug:            config.DebugMode,
-		dryRun:           config.DryRun,
 	}
 
 	if _, err := os.Stat(config.TempFileLocation + "/uploads"); os.IsNotExist(err) {
-		if config.DryRun {
-			log.Printf("[DryRun] uploads folder not found, will be created")
-		} else {
-			if err := os.MkdirAll(config.TempFileLocation+"/uploads", 0777); err != nil {
-				migrate.debugLog(err)
-				return nil, errors.New("Temp Directory doesn't exist and unable to create it")
-			}
+		if err := os.MkdirAll(config.TempFileLocation+"/uploads", 0777); err != nil {
+			migrate.debugLog(err)
+			return nil, errors.New("Temp Directory doesn't exist and unable to create it")
 		}
 	}
 
 	if _, err := os.Stat(config.TempFileLocation + "/avatars"); os.IsNotExist(err) {
-		if config.DryRun {
-			log.Printf("[DryRun] avatars folder not found, will be created")
-		} else {
-			if err := os.MkdirAll(config.TempFileLocation+"/avatars", 0777); err != nil {
-				migrate.debugLog(err)
-				return nil, errors.New("Temp Directory doesn't exist and unable to create it")
-			}
+		if err := os.MkdirAll(config.TempFileLocation+"/avatars", 0777); err != nil {
+			migrate.debugLog(err)
+			return nil, errors.New("Temp Directory doesn't exist and unable to create it")
 		}
 	}
 
@@ -300,6 +289,25 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 		sourceStore.AmazonS3.UseSSL = true
 
 		return sourceStore, nil
+
+	case "GoogleCloudStorage":
+		sourceStore.Type = "GoogleStorage"
+
+		var settingValue rocketChatSetting
+
+		if err := settingsCollection.FindOne(context.TODO(), bson.M{"_id": "FileUpload_GoogleStorage_Bucket"}).Decode(&settingValue); err != nil {
+			return nil, err
+		}
+
+		sourceStore.GoogleStorage.Bucket = settingValue.Value
+
+		if err := settingsCollection.FindOne(context.TODO(), bson.M{"_id": "FileUpload_GoogleStorage_Secret"}).Decode(&settingValue); err != nil {
+			return nil, err
+		}
+
+		sourceStore.GoogleStorage.JSONKey = settingValue.Value
+
+		break
 
 	/*case "GoogleCloudStorage":
 	sourceStore.Type = "GoogleStorage"*/
