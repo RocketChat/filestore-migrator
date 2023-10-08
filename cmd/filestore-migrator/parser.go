@@ -17,9 +17,15 @@ func parseDatabase(url string) (*config.DatabaseConfig, error) {
 		err := errors.New("The Rocket.Chat database connection information must be provided")
 		return nil, err
 	}
+
+	_dbLastIndex := strings.IndexRune(url, '?')
+	if _dbLastIndex == -1 {
+		_dbLastIndex = len(url)
+	}
+
 	database := config.DatabaseConfig{
 		ConnectionString: url,
-		Database:         url[strings.LastIndex(url, "/")+1 : len(url)],
+		Database:         url[strings.LastIndex(url, "/")+1 : _dbLastIndex],
 	}
 	return &database, nil
 }

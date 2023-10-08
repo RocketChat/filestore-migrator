@@ -1,6 +1,7 @@
 package migrator
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -10,8 +11,8 @@ import (
 
 	"github.com/RocketChat/filestore-migrator/rocketchat"
 	"github.com/RocketChat/filestore-migrator/store"
-	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type rocketChatSetting struct {
@@ -86,23 +87,20 @@ func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 
 	m.session = session
 
-	sess := session.Copy()
-	defer sess.Close()
+	db := session.Client().Database(m.databaseName)
 
-	db := sess.DB(m.databaseName)
-
-	settingsCollection := db.C("rocketchat_settings")
+	settingsCollection := db.Collection("rocketchat_settings")
 
 	var uniqueID rocketChatSetting
 
-	if err := settingsCollection.Find(bson.M{"_id": "uniqueID"}).One(&uniqueID); err != nil {
+	if err := settingsCollection.FindOne(context.TODO(), bson.M{"_id": "uniqueID"}).Decode(&uniqueID); err != nil {
 		return nil, err
 	}
 
 	m.debugLog("uniqueId", uniqueID)
 	m.uniqueID = uniqueID.Value
 
-	collection := db.C(fileCollection)
+	collection := db.Collection(fileCollection)
 
 	var files []rocketchat.File
 
@@ -114,12 +112,16 @@ func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 		query["uploadedAt"] = bson.M{"$gte": m.fileOffset}
 	}
 
-	if err := collection.Find(query).All(&files); err != nil {
-		if err == mgo.ErrNotFound {
+	if cursor, err := collection.Find(context.TODO(), query); err != nil {
+		if err == mongo.ErrNoDocuments {
 			return nil, errors.New("No files found")
 		}
 
 		return nil, err
+	} else {
+		if err = cursor.All(context.TODO(), &files); err != nil {
+			return nil, err
+		}
 	}
 
 	return files, nil
@@ -185,16 +187,12 @@ func (m *Migrate) MigrateStore() error {
 			update["$unset"] = bson.M{unset: 1}
 		}
 
-		sess := m.session.Copy()
+		db := m.session.Client().Database(m.databaseName)
+		collection := db.Collection(m.fileCollectionName)
 
-		db := sess.DB(m.databaseName)
-		collection := db.C(m.fileCollectionName)
-
-		if err := collection.Update(bson.M{"_id": file.ID}, update); err != nil {
+		if _, err := collection.UpdateOne(context.TODO(), bson.M{"_id": file.ID}, update); err != nil {
 			return err
 		}
-
-		sess.Close()
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 
@@ -362,16 +360,11 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 			update["$unset"] = bson.M{unset: 1}
 		}
 
-		sess := m.session.Copy()
+		collection := m.session.Client().Database(m.databaseName).Collection(m.fileCollectionName)
 
-		db := sess.DB(m.databaseName)
-		collection := db.C(m.fileCollectionName)
-
-		if err := collection.Update(bson.M{"_id": file.ID}, update); err != nil {
+		if _, err := collection.UpdateOne(context.TODO(), bson.M{"_id": file.ID}, update); err != nil {
 			return err
 		}
-
-		sess.Close()
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Completed Uploading %s\n", index, len(files), file.Name))
 

@@ -73,7 +73,7 @@ func (c *Config) Load(filePath string) error {
 	return nil
 }
 
-//Load tries to load the configuration file
+// Load tries to load the configuration file
 func Load(filePath string) (*Config, error) {
 	_config = new(Config)
 
