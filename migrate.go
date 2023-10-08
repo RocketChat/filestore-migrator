@@ -12,6 +12,7 @@ import (
 	"github.com/RocketChat/filestore-migrator/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
@@ -98,6 +99,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 				Database:         config.Database.Database,
 				Session:          session,
 				TempFileLocation: config.TempFileLocation,
+				Buckets:          make(map[string]*gridfs.Bucket),
 			}
 
 			migrate.sourceStore = sourceStore

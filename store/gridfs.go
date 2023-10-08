@@ -16,7 +16,7 @@ type GridFSProvider struct {
 	Session          mongo.Session
 	TempFileLocation string
 
-	buckets map[string]*gridfs.Bucket
+	Buckets map[string]*gridfs.Bucket
 }
 
 // StoreType returns the name of the store
@@ -25,14 +25,14 @@ func (g *GridFSProvider) StoreType() string {
 }
 
 func (g *GridFSProvider) addBucket(bucketName string) error {
-	if _, ok := g.buckets[bucketName]; ok {
+	if _, ok := g.Buckets[bucketName]; ok {
 		return nil
 	}
 
 	if bucket, err := gridfs.NewBucket(g.Session.Client().Database(g.Database), options.GridFSBucket().SetName(bucketName)); err != nil {
 		return err
 	} else {
-		g.buckets[bucketName] = bucket
+		g.Buckets[bucketName] = bucket
 	}
 
 	return nil
@@ -50,7 +50,7 @@ func (g *GridFSProvider) Download(fileCollection string, file rocketchat.File) (
 		bucket *gridfs.Bucket
 		ok     bool
 	)
-	if bucket, ok = g.buckets[fileCollection]; !ok {
+	if bucket, ok = g.Buckets[fileCollection]; !ok {
 		g.addBucket(fileCollection)
 	}
 
