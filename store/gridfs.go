@@ -2,7 +2,6 @@ package store
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/RocketChat/filestore-migrator/rocketchat"
