@@ -45,21 +45,25 @@ func (g *GridFSProvider) Download(fileCollection string, file rocketchat.File) (
 	var (
 		bucket *gridfs.Bucket
 		ok     bool
+		err    error
 	)
 	if bucket, ok = g.Buckets[fileCollection]; !ok {
-		bucket = g.addBucket(fileCollection)
+		bucket, err = g.addBucket(fileCollection)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	filePath := g.TempFileLocation + "/" + file.ID
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err = os.Stat(filePath); os.IsNotExist(err) {
 
 		f, err := os.Create(filePath)
 		if err != nil {
 			return "", err
 		}
 
-		if _, err := bucket.DownloadToStream(file.ID, f); err != nil {
+		if _, err = bucket.DownloadToStream(file.ID, f); err != nil {
 			return "", err
 		}
 
