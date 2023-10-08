@@ -24,18 +24,14 @@ func (g *GridFSProvider) StoreType() string {
 	return "GridFS"
 }
 
-func (g *GridFSProvider) addBucket(bucketName string) error {
-	if _, ok := g.Buckets[bucketName]; ok {
-		return nil
-	}
-
+func (g *GridFSProvider) addBucket(bucketName string) (*gridfs.Bucket, error) {
 	if bucket, err := gridfs.NewBucket(g.Session.Client().Database(g.Database), options.GridFSBucket().SetName(bucketName)); err != nil {
-		return err
+		return nil, err
 	} else {
 		g.Buckets[bucketName] = bucket
 	}
 
-	return nil
+	return g.Buckets[bucketName], nil
 }
 
 // SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
@@ -51,7 +47,7 @@ func (g *GridFSProvider) Download(fileCollection string, file rocketchat.File) (
 		ok     bool
 	)
 	if bucket, ok = g.Buckets[fileCollection]; !ok {
-		g.addBucket(fileCollection)
+		bucket = g.addBucket(fileCollection)
 	}
 
 	filePath := g.TempFileLocation + "/" + file.ID
