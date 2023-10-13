@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine AS backend
+FROM golang:1.17-alpine AS backend
 
 RUN apk add --no-cache ca-certificates git
 WORKDIR /go/src/github.com/RocketChat/filestore-migrator
