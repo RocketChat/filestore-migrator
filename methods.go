@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
 	"strings"
@@ -112,8 +113,8 @@ func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 		query["uploadedAt"] = bson.M{"$gte": m.fileOffset}
 	}
 
-	if cursor, err := collection.Find(context.TODO(), query); err != nil {
-		if err == mongo.ErrNoDocuments {
+	if cursor, err := collection.Find(context.TODO(), query, &options.FindOptions{Sort: bson.D{{"uploadedAt", -1}}}); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, errors.New("No files found")
 		}
 
@@ -152,7 +153,7 @@ func (m *Migrate) MigrateStore() error {
 
 		downloadedPath, err := m.sourceStore.Download(m.fileCollectionName, file)
 		if err != nil {
-			if err == store.ErrNotFound || m.skipErrors {
+			if errors.Is(err, store.ErrNotFound) || m.skipErrors {
 				m.debugLog(fmt.Sprintf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name))
 				err = nil
 				continue
@@ -177,10 +178,10 @@ func (m *Migrate) MigrateStore() error {
 			return err
 		}
 
-		unset := m.fixFileForUpload(&file, objectPath)
+		set, unset := m.fixFileForUpload(&file, objectPath)
 
 		update := bson.M{
-			"$set": file,
+			"$set": set,
 		}
 
 		if unset != "" {
@@ -223,38 +224,40 @@ func (m *Migrate) getObjectPath(file *rocketchat.File) string {
 	return objectPath
 }
 
-func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) string {
+func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (rocketchat.FileSetOp, string) {
 	unset := ""
+
+	set := rocketchat.FileSetOp{}
 
 	switch m.destinationStore.StoreType() {
 	case "AmazonS3":
-		file.AmazonS3 = rocketchat.AmazonS3{
+		set.AmazonS3 = &rocketchat.AmazonS3{
 			Path: objectPath,
 		}
 
 		// Set to empty object so won't be saved back
 		unset = "GoogleStorage"
-		file.GoogleStorage = rocketchat.GoogleStorage{}
+		set.GoogleStorage = nil
 
 	case "GoogleCloudStorage":
-		file.GoogleStorage = rocketchat.GoogleStorage{
+		set.GoogleStorage = &rocketchat.GoogleStorage{
 			Path: objectPath,
 		}
 
 		// Set to empty object so won't be saved back
 		unset = "AmazonS3"
-		file.AmazonS3 = rocketchat.AmazonS3{}
+		set.AmazonS3 = nil
 	case "FileSystem":
 	default:
 	}
 
 	ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", m.destinationStore.StoreType(), m.storeName, file.ID, file.Name)
 
-	file.URL = ufsPath
-	file.Path = ufsPath
-	file.Store = m.destinationStore.StoreType() + ":" + m.storeName
+	set.Url = strings.TrimSuffix(m.siteUrl, "/") + ufsPath
+	set.Path = ufsPath
+	set.Store = m.destinationStore.StoreType() + ":" + m.storeName
 
-	return unset
+	return set, unset
 }
 
 // SetFileOffset sets an offset for file upload/downloads
@@ -350,10 +353,10 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 			return err
 		}
 
-		unset := m.fixFileForUpload(&file, objectPath)
+		set, unset := m.fixFileForUpload(&file, objectPath)
 
 		update := bson.M{
-			"$set": file,
+			"$set": set,
 		}
 
 		if unset != "" {

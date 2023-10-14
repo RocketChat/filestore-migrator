@@ -19,6 +19,7 @@ import (
 
 // Migrate needs to be initialized to begin any migration
 type Migrate struct {
+	siteUrl            string
 	storeName          string
 	skipErrors         bool
 	sourceStore        store.Provider
@@ -32,6 +33,10 @@ type Migrate struct {
 	tempFileLocation   string
 	fileDelay          time.Duration
 	debug              bool
+}
+
+type settingValue struct {
+	Value string `bson:"value"`
 }
 
 // New takes the config and returns an initialized Migrate ready to begin migrations
@@ -63,7 +68,19 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 		fileDelay = delay
 	}
 
+	s, err := connectDB(config.Database.ConnectionString)
+	if err != nil {
+		return nil, err
+	}
+
+	value := &settingValue{}
+	err = s.Client().Database(config.Database.Database).Collection("rocketchat_settings").FindOne(context.Background(), bson.M{"_id": "Site_Url"}).Decode(value)
+	if err != nil {
+		return nil, err
+	}
+
 	migrate := &Migrate{
+		siteUrl:          value.Value,
 		skipErrors:       skipErrors,
 		databaseName:     config.Database.Database,
 		connectionString: config.Database.ConnectionString,
