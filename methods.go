@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
 	"strings"
@@ -112,8 +113,8 @@ func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 		query["uploadedAt"] = bson.M{"$gte": m.fileOffset}
 	}
 
-	if cursor, err := collection.Find(context.TODO(), query); err != nil {
-		if err == mongo.ErrNoDocuments {
+	if cursor, err := collection.Find(context.TODO(), query, &options.FindOptions{Sort: bson.D{{"uploadedAt", -1}}}); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, errors.New("No files found")
 		}
 
