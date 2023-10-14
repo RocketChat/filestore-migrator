@@ -34,6 +34,14 @@ type File struct {
 	URL        string
 }
 
+type FileSetOp struct {
+	GoogleStorage *GoogleStorage `bson:"GoogleStorage,omitempty"`
+	AmazonS3      *AmazonS3      `bson:"AmazonS3,omitempty"`
+	Url           string         `bson:"url"`
+	Path          string         `bson:"path"`
+	Store         string         `bson:"store"`
+}
+
 // GoogleStorage is sub property of file
 type GoogleStorage struct {
 	Path string
