@@ -252,7 +252,7 @@ func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (ro
 
 	ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", m.destinationStore.StoreType(), m.storeName, file.ID, file.Name)
 
-	set.Url = m.siteUrl + ufsPath
+	set.Url = strings.TrimSuffix(m.siteUrl, "/") + ufsPath
 	set.Path = ufsPath
 	set.Store = m.destinationStore.StoreType() + ":" + m.storeName
 
