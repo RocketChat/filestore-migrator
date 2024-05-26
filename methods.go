@@ -225,6 +225,7 @@ func (m *Migrate) getObjectPath(file *rocketchat.File) string {
 }
 
 func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (rocketchat.FileSetOp, string) {
+	// what to unset
 	unset := ""
 
 	set := rocketchat.FileSetOp{}
@@ -237,7 +238,6 @@ func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (ro
 
 		// Set to empty object so won't be saved back
 		unset = "GoogleStorage"
-		set.GoogleStorage = nil
 
 	case "GoogleCloudStorage":
 		set.GoogleStorage = &rocketchat.GoogleStorage{
@@ -246,14 +246,13 @@ func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (ro
 
 		// Set to empty object so won't be saved back
 		unset = "AmazonS3"
-		set.AmazonS3 = nil
 	case "FileSystem":
 	default:
 	}
 
 	ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", m.destinationStore.StoreType(), m.storeName, file.ID, file.Name)
 
-	set.Url = strings.TrimSuffix(m.siteUrl, "/") + ufsPath
+	set.Url = ufsPath
 	set.Path = ufsPath
 	set.Store = m.destinationStore.StoreType() + ":" + m.storeName
 
