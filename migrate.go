@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // Migrate needs to be initialized to begin any migration
@@ -80,7 +79,7 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 	}
 
 	migrate := &Migrate{
-		siteUrl:          value.Value,
+		siteUrl:          strings.TrimSuffix(value.Value, "/"),
 		skipErrors:       skipErrors,
 		databaseName:     config.Database.Database,
 		connectionString: config.Database.ConnectionString,

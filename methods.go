@@ -144,6 +144,10 @@ func (m *Migrate) MigrateStore() error {
 	for i, file := range files {
 		index := i + 1 // for logs
 
+		if m.storeName == "Avatars" && file.Rid != "" {
+			file.IsRoomAvatar = true
+		}
+
 		m.debugLog(fmt.Sprintf("[%v/%v] Downloading %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
 
 		if !file.Complete {
@@ -213,7 +217,14 @@ func (m *Migrate) getObjectPath(file *rocketchat.File) string {
 	case "Uploads":
 		objectPath = fmt.Sprintf("%s/%s/%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.Rid, file.UserID, file.ID)
 	case "Avatars":
-		objectPath = fmt.Sprintf("%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.UserID)
+		var pathSuffix string
+		if file.IsRoomAvatar {
+			pathSuffix = "room-" + file.Rid
+		} else {
+			pathSuffix = file.UserID
+		}
+
+		objectPath = fmt.Sprintf("%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), pathSuffix)
 	}
 
 	// FileSystem just dumps them in the folder based on the ID
@@ -252,7 +263,7 @@ func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (ro
 
 	ufsPath := fmt.Sprintf("/ufs/%s:%s/%s/%s", m.destinationStore.StoreType(), m.storeName, file.ID, file.Name)
 
-	set.Url = ufsPath
+	set.Url = m.siteUrl + ufsPath
 	set.Path = ufsPath
 	set.Store = m.destinationStore.StoreType() + ":" + m.storeName
 
