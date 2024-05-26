@@ -145,6 +145,7 @@ func (m *Migrate) MigrateStore() error {
 		index := i + 1 // for logs
 
 		if m.storeName == "Avatars" && file.Rid != "" {
+			// https://github.com/RocketChat/Rocket.Chat/blob/a7823c1b0901c510af5bfa994e7b3f96ee10dd91/apps/meteor/app/file-upload/server/lib/FileUpload.ts#L81-L84
 			file.IsRoomAvatar = true
 		}
 
@@ -215,10 +216,12 @@ func (m *Migrate) getObjectPath(file *rocketchat.File) string {
 
 	switch m.storeName {
 	case "Uploads":
+		// https://github.com/RocketChat/Rocket.Chat/blob/a7823c1b0901c510af5bfa994e7b3f96ee10dd91/apps/meteor/app/file-upload/server/lib/FileUpload.ts#L58-L60
 		objectPath = fmt.Sprintf("%s/%s/%s/%s/%s", m.uniqueID, strings.ToLower(m.storeName), file.Rid, file.UserID, file.ID)
 	case "Avatars":
 		var pathSuffix string
 		if file.IsRoomAvatar {
+			// https://github.com/RocketChat/Rocket.Chat/blob/a7823c1b0901c510af5bfa994e7b3f96ee10dd91/apps/meteor/app/file-upload/server/lib/FileUpload.ts#L81-L84
 			pathSuffix = "room-" + file.Rid
 		} else {
 			pathSuffix = file.UserID
