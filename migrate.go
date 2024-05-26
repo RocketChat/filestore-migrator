@@ -344,40 +344,11 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 }
 
 func connectDB(connectionstring string) (mongo.Session, error) {
-
-	secondaryPreferred := false
-
-	if strings.Contains(connectionstring, "ssl=true") {
-		connectionstring = strings.Replace(connectionstring, "&ssl=true", "", -1)
-		connectionstring = strings.Replace(connectionstring, "?ssl=true&", "?", -1)
-	}
-
-	if strings.Contains(connectionstring, "readPreference=secondaryPreferred") {
-		connectionstring = strings.Replace(connectionstring, "&readPreference=secondaryPreferred", "", -1)
-		connectionstring = strings.Replace(connectionstring, "?readPreference=secondaryPreferred", "", -1)
-		secondaryPreferred = true
-	}
-
-	if strings.Contains(connectionstring, "readPreference=secondary") {
-		connectionstring = strings.Replace(connectionstring, "&readPreference=secondary", "", -1)
-		connectionstring = strings.Replace(connectionstring, "?readPreference=secondary", "", -1)
-		secondaryPreferred = true
-	}
-
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connectionstring))
 	if err != nil {
 		panic(err)
 	}
-
-	var sessionOpts *options.SessionOptions = nil
-
-	if secondaryPreferred {
-		sessionOpts = &options.SessionOptions{
-			DefaultReadPreference: readpref.SecondaryPreferred(),
-		}
-	}
-
-	sess, err := client.StartSession(sessionOpts)
+	sess, err := client.StartSession(&options.SessionOptions{})
 	if err != nil {
 		return nil, err
 	}
