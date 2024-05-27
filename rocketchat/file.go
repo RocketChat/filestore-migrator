@@ -8,7 +8,7 @@ type File struct {
 	Name          string
 	Size          int
 	Type          string
-	Rid           string
+	Rid           string `bson:"rid"`
 	UserID        string `bson:"userId"`
 	Description   string
 	Store         string
@@ -32,6 +32,16 @@ type File struct {
 	UploadedAt time.Time `bson:"uploadedAt"`
 	Path       string
 	URL        string
+
+	IsRoomAvatar bool
+}
+
+type FileSetOp struct {
+	GoogleStorage *GoogleStorage `bson:"GoogleStorage,omitempty"`
+	AmazonS3      *AmazonS3      `bson:"AmazonS3,omitempty"`
+	Url           string         `bson:"url"`
+	Path          string         `bson:"path"`
+	Store         string         `bson:"store"`
 }
 
 // GoogleStorage is sub property of file

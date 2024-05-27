@@ -19,3 +19,6 @@ docker:
 # Build and execute the tool binary.
 run: build
 	${binary_name}
+
+build-debug:
+	go build -gcflags=all="-N -l" ./cmd/filestore-migrator/

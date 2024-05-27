@@ -14,11 +14,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // Migrate needs to be initialized to begin any migration
 type Migrate struct {
+	siteUrl            string
 	storeName          string
 	skipErrors         bool
 	sourceStore        store.Provider
@@ -32,6 +32,10 @@ type Migrate struct {
 	tempFileLocation   string
 	fileDelay          time.Duration
 	debug              bool
+}
+
+type settingValue struct {
+	Value string `bson:"value"`
 }
 
 // New takes the config and returns an initialized Migrate ready to begin migrations
@@ -63,7 +67,19 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 		fileDelay = delay
 	}
 
+	s, err := connectDB(config.Database.ConnectionString)
+	if err != nil {
+		return nil, err
+	}
+
+	value := &settingValue{}
+	err = s.Client().Database(config.Database.Database).Collection("rocketchat_settings").FindOne(context.Background(), bson.M{"_id": "Site_Url"}).Decode(value)
+	if err != nil {
+		return nil, err
+	}
+
 	migrate := &Migrate{
+		siteUrl:          strings.TrimSuffix(value.Value, "/"),
 		skipErrors:       skipErrors,
 		databaseName:     config.Database.Database,
 		connectionString: config.Database.ConnectionString,
@@ -327,40 +343,11 @@ func GetRocketChatStore(dbConfig config.DatabaseConfig) (*config.MigrateTarget, 
 }
 
 func connectDB(connectionstring string) (mongo.Session, error) {
-
-	secondaryPreferred := false
-
-	if strings.Contains(connectionstring, "ssl=true") {
-		connectionstring = strings.Replace(connectionstring, "&ssl=true", "", -1)
-		connectionstring = strings.Replace(connectionstring, "?ssl=true&", "?", -1)
-	}
-
-	if strings.Contains(connectionstring, "readPreference=secondaryPreferred") {
-		connectionstring = strings.Replace(connectionstring, "&readPreference=secondaryPreferred", "", -1)
-		connectionstring = strings.Replace(connectionstring, "?readPreference=secondaryPreferred", "", -1)
-		secondaryPreferred = true
-	}
-
-	if strings.Contains(connectionstring, "readPreference=secondary") {
-		connectionstring = strings.Replace(connectionstring, "&readPreference=secondary", "", -1)
-		connectionstring = strings.Replace(connectionstring, "?readPreference=secondary", "", -1)
-		secondaryPreferred = true
-	}
-
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connectionstring))
 	if err != nil {
 		panic(err)
 	}
-
-	var sessionOpts *options.SessionOptions = nil
-
-	if secondaryPreferred {
-		sessionOpts = &options.SessionOptions{
-			DefaultReadPreference: readpref.SecondaryPreferred(),
-		}
-	}
-
-	sess, err := client.StartSession(sessionOpts)
+	sess, err := client.StartSession(&options.SessionOptions{})
 	if err != nil {
 		return nil, err
 	}
