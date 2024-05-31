@@ -15,7 +15,7 @@ type File struct {
 	Complete      bool
 	Uploading     bool
 	Extension     string
-	Progress      int
+	Progress      float64
 	AmazonS3      AmazonS3      `bson:"AmazonS3,omitempty"`
 	GoogleStorage GoogleStorage `bson:"GoogleStorage,omitempty"`
 	UpdatedAt     time.Time     `bson:"_updatedAt"`
