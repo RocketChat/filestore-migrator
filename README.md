@@ -4,7 +4,6 @@
 
 **filestore-migrator** is a tool to move files uploaded to a Rocket.Chat instance between object storage providers. Currently we support as targets any object storage provider compatible with the S3 API, as well as, the local file system and Google Cloud Storage. GridFS is also compatible as a source target only.
 
-FIX ORDER OF readPreferred!!!!
 ## Installation
 
 If you are installing **filestore-migrator** from source, make sure that you have a recent version of the `go` runtime installed and that you `$GOPATH` is in your OS system-wide `PATH`. Then, clone the repo to `$GOPATH/src/github.com/RocketChat/filestore-migrator` or use `go get github.com/RocketChat/filestore-migrator`. Now you only need to run the following commands on the tool source directory:
