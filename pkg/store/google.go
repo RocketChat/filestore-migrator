@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/RocketChat/filestore-migrator/rocketchat"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/models"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/storage/v1"
 )
@@ -31,7 +31,7 @@ func (g *GoogleStorageProvider) SetTempDirectory(dir string) {
 }
 
 // Download downloads a file from the storage provider and moves it to the temporary file store
-func (g *GoogleStorageProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
+func (g *GoogleStorageProvider) Download(fileCollection string, file models.RocketChatFile) (string, error) {
 	ctx := context.Background()
 
 	cfg, err := google.JWTConfigFromJSON([]byte(g.JSONKey), "https://www.googleapis.com/auth/cloud-platform")
@@ -110,6 +110,6 @@ func (g *GoogleStorageProvider) Upload(path string, filePath string, contentType
 	return nil
 }
 
-func (s *GoogleStorageProvider) Delete(file rocketchat.File, permanentelyDelete bool) error {
+func (s *GoogleStorageProvider) Delete(file models.RocketChatFile, permanentelyDelete bool) error {
 	return errors.New("delete object method not implemented")
 }

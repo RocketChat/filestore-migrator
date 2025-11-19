@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/RocketChat/filestore-migrator/config"
-	"github.com/RocketChat/filestore-migrator/store"
+	"github.com/RocketChat/filestore-migrator/v2/internal/config"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"

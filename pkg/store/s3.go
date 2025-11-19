@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/RocketChat/filestore-migrator/rocketchat"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/models"
 	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -35,7 +35,7 @@ func (s *S3Provider) SetTempDirectory(dir string) {
 }
 
 // Download will download the file to temp file store
-func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (string, error) {
+func (s *S3Provider) Download(fileCollection string, file models.RocketChatFile) (string, error) {
 	minioClient, err := minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
 		Secure: s.UseSSL,
@@ -104,7 +104,7 @@ func (s *S3Provider) Upload(objectPath string, filePath string, contentType stri
 
 // Delete permanentely permanentely destroys an object specified by the
 // rocketFile.Amazons3.filepath
-func (s *S3Provider) Delete(file rocketchat.File, permanentelyDelete bool) error {
+func (s *S3Provider) Delete(file models.RocketChatFile, permanentelyDelete bool) error {
 	minioClient, err := minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
 		Secure: s.UseSSL,

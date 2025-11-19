@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/RocketChat/filestore-migrator/rocketchat"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/models"
 )
 
 // FileSystemStorageProvider provides methods to use the local file system as a storage provider.
@@ -25,7 +25,7 @@ func (f *FileSystemStorageProvider) SetTempDirectory(dir string) {
 }
 
 // Download downloads a file from the storage provider and moves it to the temporary file store
-func (f *FileSystemStorageProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
+func (f *FileSystemStorageProvider) Download(fileCollection string, file models.RocketChatFile) (string, error) {
 	sourcePath := f.Location + "/" + file.ID
 	destinationPath := f.TempFileLocation + "/" + file.ID
 
@@ -79,6 +79,6 @@ func (f *FileSystemStorageProvider) Upload(path string, filePath string, content
 	return nil
 }
 
-func (s *FileSystemStorageProvider) Delete(file rocketchat.File, permanentelyDelete bool) error {
+func (s *FileSystemStorageProvider) Delete(file models.RocketChatFile, permanentelyDelete bool) error {
 	return errors.New("delete object method not implemented")
 }
