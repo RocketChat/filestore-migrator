@@ -4,7 +4,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/RocketChat/filestore-migrator/rocketchat"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/models"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -40,7 +40,7 @@ func (g *GridFSProvider) SetTempDirectory(dir string) {
 }
 
 // Download downloads a file from the storage provider and moves it to the temporary file store
-func (g *GridFSProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
+func (g *GridFSProvider) Download(fileCollection string, file models.RocketChatFile) (string, error) {
 
 	var (
 		bucket *gridfs.Bucket
@@ -78,6 +78,6 @@ func (g *GridFSProvider) Upload(path string, filePath string, contentType string
 	return errors.New("unimplemented")
 }
 
-func (s *GridFSProvider) Delete(file rocketchat.File, permanentelyDelete bool) error {
+func (s *GridFSProvider) Delete(file models.RocketChatFile, permanentelyDelete bool) error {
 	return errors.New("unimplemented")
 }

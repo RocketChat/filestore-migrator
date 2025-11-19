@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/RocketChat/filestore-migrator/rocketchat"
-	"github.com/RocketChat/filestore-migrator/store"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/RocketChat/filestore-migrator/v2/pkg/models"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -61,7 +62,7 @@ func (m *Migrate) SetStoreName(storeName string) error {
 	return nil
 }
 
-func (m *Migrate) getFiles() ([]rocketchat.File, error) {
+func (m *Migrate) getFiles() ([]models.RocketChatFile, error) {
 	if m.storeName == "" {
 		return nil, errors.New("no store Name")
 	}
@@ -103,7 +104,7 @@ func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 
 	collection := db.Collection(fileCollection)
 
-	var files []rocketchat.File
+	var files []models.RocketChatFile
 
 	m.debugLog(fileCollection, m.sourceStore.StoreType()+":"+m.storeName)
 
@@ -211,7 +212,7 @@ func (m *Migrate) MigrateStore() error {
 	return nil
 }
 
-func (m *Migrate) getObjectPath(file *rocketchat.File) string {
+func (m *Migrate) getObjectPath(file *models.RocketChatFile) string {
 	objectPath := ""
 
 	switch m.storeName {
@@ -238,15 +239,15 @@ func (m *Migrate) getObjectPath(file *rocketchat.File) string {
 	return objectPath
 }
 
-func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (rocketchat.FileSetOp, string) {
+func (m *Migrate) fixFileForUpload(file *models.RocketChatFile, objectPath string) (models.FileSetOp, string) {
 	// what to unset
 	unset := ""
 
-	set := rocketchat.FileSetOp{}
+	set := models.FileSetOp{}
 
 	switch m.destinationStore.StoreType() {
 	case "AmazonS3":
-		set.AmazonS3 = &rocketchat.AmazonS3{
+		set.AmazonS3 = &models.AmazonS3{
 			Path: objectPath,
 		}
 
@@ -254,7 +255,7 @@ func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (ro
 		unset = "GoogleStorage"
 
 	case "GoogleCloudStorage":
-		set.GoogleStorage = &rocketchat.GoogleStorage{
+		set.GoogleStorage = &models.GoogleStorage{
 			Path: objectPath,
 		}
 

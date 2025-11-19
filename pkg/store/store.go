@@ -3,7 +3,7 @@ package store
 import (
 	"errors"
 
-	"github.com/RocketChat/filestore-migrator/rocketchat"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/models"
 )
 
 var (
@@ -18,9 +18,9 @@ type Provider interface {
 	// Upload uploads a file from given path to the storage provider
 	Upload(objectPath string, filePath string, contentType string) error
 	// Download downloads a file from the storage provider and moves it to the temporary file store
-	Download(fileCollection string, file rocketchat.File) (string, error)
+	Download(fileCollection string, file models.RocketChatFile) (string, error)
 	// SetTempDirectory allows for the setting of the directory that will be used for temporary file store during operations
 	SetTempDirectory(subdir string)
 
-	Delete(file rocketchat.File, permanentelyDelete bool) error
+	Delete(file models.RocketChatFile, permanentelyDelete bool) error
 }

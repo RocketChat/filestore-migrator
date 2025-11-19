@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	pkg "github.com/RocketChat/filestore-migrator"
-	"github.com/RocketChat/filestore-migrator/config"
+	"github.com/RocketChat/filestore-migrator/v2/internal/config"
+	"github.com/RocketChat/filestore-migrator/v2/pkg/migrator"
 )
 
 func parseDatabase(url string) (*config.DatabaseConfig, error) {
@@ -201,7 +201,7 @@ func Parse(configFile string,
 			configuration.Source = *target
 		} else {
 			log.Println("Connecting to database to detect source upload config")
-			target, err := pkg.GetRocketChatStore(configuration.Database)
+			target, err := migrator.GetRocketChatStore(configuration.Database)
 			if err != nil {
 				panic(err)
 			}
@@ -219,7 +219,7 @@ func Parse(configFile string,
 		} else {
 			log.Println("Connecting to database to detect destination upload config")
 
-			target, err := pkg.GetRocketChatStore(configuration.Database)
+			target, err := migrator.GetRocketChatStore(configuration.Database)
 			if err != nil {
 				panic(err)
 			}

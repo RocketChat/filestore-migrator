@@ -1,9 +1,9 @@
-package rocketchat
+package models
 
 import "time"
 
-// File represents the structure of the file in Rocket.Chats database
-type File struct {
+// RocketChatFile represents the structure of the file in Rocket.Chats database
+type RocketChatFile struct {
 	ID            string `bson:"_id"`
 	Name          string
 	Size          int

@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	pkg "github.com/RocketChat/filestore-migrator"
+	mg "github.com/RocketChat/filestore-migrator/v2/pkg/migrator"
 )
 
 func main() {
@@ -48,29 +48,29 @@ func main() {
 		panic(err)
 	}
 
-	migrate, err := pkg.New(config, *skipErrors)
+	migrator, err := mg.New(config, *skipErrors)
 	if err != nil {
 		panic(err)
 	}
 
-	if err := migrate.SetStoreName(*store); err != nil {
+	if err := migrator.SetStoreName(*store); err != nil {
 		panic(err)
 	}
 
 	switch *action {
 	case "migrate":
 		log.Println("Beginning migration of files")
-		if err := migrate.MigrateStore(); err != nil {
+		if err := migrator.MigrateStore(); err != nil {
 			panic(err)
 		}
 	case "upload":
 		log.Println("Beginning upload of files")
-		if err := migrate.UploadAll(config.TempFileLocation); err != nil {
+		if err := migrator.UploadAll(config.TempFileLocation); err != nil {
 			panic(err)
 		}
 	case "download":
 		log.Println("Beginning download of files")
-		if err := migrate.DownloadAll(); err != nil {
+		if err := migrator.DownloadAll(); err != nil {
 			panic(err)
 		}
 	default:
