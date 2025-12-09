@@ -40,12 +40,13 @@ type MigrateTargetGoogleStorage struct {
 }
 
 type MigrateTargetS3 struct {
-	Endpoint  string `yaml:"endpoint"`
-	Bucket    string `yaml:"bucket"`
-	AccessID  string `yaml:"accessId"`
-	AccessKey string `yaml:"accessKey"`
-	Region    string `yaml:"region"`
-	UseSSL    bool   `yaml:"useSSL"`
+	Endpoint     string `yaml:"endpoint"`
+	Bucket       string `yaml:"bucket"`
+	BucketPrefix string `yaml:"bucketPrefix"`
+	AccessID     string `yaml:"accessId"`
+	AccessKey    string `yaml:"accessKey"`
+	Region       string `yaml:"region"`
+	UseSSL       bool   `yaml:"useSSL"`
 }
 
 type MigrateTargetFileSystem struct {

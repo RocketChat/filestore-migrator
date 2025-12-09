@@ -183,12 +183,13 @@ func New(config *config.Config, skipErrors bool) (*Migrate, error) {
 			}
 
 			destinationStore := &store.S3Provider{
-				Endpoint:  config.Destination.AmazonS3.Endpoint,
-				AccessID:  config.Destination.AmazonS3.AccessID,
-				AccessKey: config.Destination.AmazonS3.AccessKey,
-				Region:    config.Destination.AmazonS3.Region,
-				Bucket:    config.Destination.AmazonS3.Bucket,
-				UseSSL:    config.Destination.AmazonS3.UseSSL,
+				Endpoint:     config.Destination.AmazonS3.Endpoint,
+				AccessID:     config.Destination.AmazonS3.AccessID,
+				AccessKey:    config.Destination.AmazonS3.AccessKey,
+				Region:       config.Destination.AmazonS3.Region,
+				Bucket:       config.Destination.AmazonS3.Bucket,
+				BucketPrefix: config.Destination.AmazonS3.BucketPrefix,
+				UseSSL:       config.Destination.AmazonS3.UseSSL,
 			}
 
 			migrate.destinationStore = destinationStore

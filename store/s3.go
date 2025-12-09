@@ -17,6 +17,7 @@ import (
 type S3Provider struct {
 	Endpoint         string
 	Bucket           string
+	BucketPrefix     string
 	AccessID         string
 	AccessKey        string
 	Region           string
@@ -76,6 +77,10 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 
 // Upload will upload the file from given file path
 func (s *S3Provider) Upload(objectPath string, filePath string, contentType string) error {
+	if s.BucketPrefix != "" {
+		objectPath = s.BucketPrefix + "/" + objectPath
+	}
+
 	minioClient, err := minio.New(s.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(s.AccessID, s.AccessKey, ""),
 		Secure: s.UseSSL,
