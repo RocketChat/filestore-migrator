@@ -182,6 +182,7 @@ func (m *Migrate) MigrateStore() error {
 		if err := m.destinationStore.Upload(objectPath, downloadedPath, file.Type); err != nil {
 			return err
 		}
+		os.Remove(downloadedPath)
 
 		set, unset := m.fixFileForUpload(&file, objectPath)
 
