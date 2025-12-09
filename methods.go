@@ -131,7 +131,7 @@ func (m *Migrate) getFiles() ([]rocketchat.File, error) {
 // MigrateStore migrates a filestore between source and destination
 func (m *Migrate) MigrateStore() error {
 	if m.sourceStore == nil || m.destinationStore == nil {
-		return errors.New("For MigrateStore both a source and destionation store must be provided")
+		return errors.New("For MigrateStore both a source and destination store must be provided")
 	}
 
 	files, err := m.getFiles()
