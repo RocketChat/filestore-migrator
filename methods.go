@@ -183,14 +183,18 @@ func (m *Migrate) MigrateStore() error {
 			return err
 		}
 
-		set, unset := m.fixFileForUpload(&file, objectPath)
+		set, unsetFields := m.fixFileForUpload(&file, objectPath)
 
 		update := bson.M{
 			"$set": set,
 		}
 
-		if unset != "" {
-			update["$unset"] = bson.M{unset: 1}
+		if len(unsetFields) > 0 {
+			unsetDoc := bson.M{}
+			for _, field := range unsetFields {
+				unsetDoc[field] = 1
+			}
+			update["$unset"] = unsetDoc
 		}
 
 		db := m.session.Client().Database(m.databaseName)
@@ -238,10 +242,8 @@ func (m *Migrate) getObjectPath(file *rocketchat.File) string {
 	return objectPath
 }
 
-func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (rocketchat.FileSetOp, string) {
-	// what to unset
-	unset := ""
-
+func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (rocketchat.FileSetOp, []string) {
+	var unsetFields []string
 	set := rocketchat.FileSetOp{}
 
 	switch m.destinationStore.StoreType() {
@@ -250,16 +252,21 @@ func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (ro
 			Path: objectPath,
 		}
 
-		// Set to empty object so won't be saved back
-		unset = "GoogleStorage"
+		unsetFields = append(unsetFields, "GoogleStorage")
+		if file.Extension != "" {
+			unsetFields = append(unsetFields, "extension")
+		}
 
 	case "GoogleCloudStorage":
 		set.GoogleStorage = &rocketchat.GoogleStorage{
 			Path: objectPath,
 		}
 
-		// Set to empty object so won't be saved back
-		unset = "AmazonS3"
+		unsetFields = append(unsetFields, "AmazonS3")
+		if file.Extension != "" {
+			unsetFields = append(unsetFields, "extension")
+		}
+
 	case "FileSystem":
 	default:
 	}
@@ -270,7 +277,7 @@ func (m *Migrate) fixFileForUpload(file *rocketchat.File, objectPath string) (ro
 	set.Path = ufsPath
 	set.Store = m.destinationStore.StoreType() + ":" + m.storeName
 
-	return set, unset
+	return set, unsetFields
 }
 
 // SetFileOffset sets an offset for file upload/downloads
@@ -366,14 +373,18 @@ func (m *Migrate) UploadAll(filesRoot string) error {
 			return err
 		}
 
-		set, unset := m.fixFileForUpload(&file, objectPath)
+		set, unsetFields := m.fixFileForUpload(&file, objectPath)
 
 		update := bson.M{
 			"$set": set,
 		}
 
-		if unset != "" {
-			update["$unset"] = bson.M{unset: 1}
+		if len(unsetFields) > 0 {
+			unsetDoc := bson.M{}
+			for _, field := range unsetFields {
+				unsetDoc[field] = 1
+			}
+			update["$unset"] = unsetDoc
 		}
 
 		collection := m.session.Client().Database(m.databaseName).Collection(m.fileCollectionName)

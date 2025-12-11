@@ -27,6 +27,17 @@ func (f *FileSystemStorageProvider) SetTempDirectory(dir string) {
 // Download downloads a file from the storage provider and moves it to the temporary file store
 func (f *FileSystemStorageProvider) Download(fileCollection string, file rocketchat.File) (string, error) {
 	sourcePath := f.Location + "/" + file.ID
+
+	if file.Extension != "" {
+		pathWithExt := sourcePath + "." + file.Extension
+		// Try with extension first
+		if _, err := os.Stat(pathWithExt); err == nil {
+			sourcePath = pathWithExt
+		}
+		// If file with extension doesn't exist, try without extension
+		// (falls through to use original sourcePath)
+	}
+
 	destinationPath := f.TempFileLocation + "/" + file.ID
 
 	if _, err := os.Stat(sourcePath); os.IsNotExist(err) {
