@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -55,6 +56,10 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 			minio.GetObjectOptions{},
 		)
 		if err != nil {
+			errResp := minio.ToErrorResponse(err)
+			if errResp.Code == minio.NoSuchKey || errResp.Code == "NotFound" || errResp.StatusCode == http.StatusNotFound {
+				return "", ErrNotFound
+			}
 			return "", err
 		}
 
@@ -66,6 +71,11 @@ func (s *S3Provider) Download(fileCollection string, file rocketchat.File) (stri
 		defer f.Close()
 
 		if _, err = io.Copy(f, object); err != nil {
+			_ = os.Remove(filePath)
+			errResp := minio.ToErrorResponse(err)
+			if errResp.Code == minio.NoSuchKey || errResp.Code == "NotFound" || errResp.StatusCode == http.StatusNotFound {
+				return "", ErrNotFound
+			}
 			return "", err
 		}
 

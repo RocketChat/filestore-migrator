@@ -159,12 +159,10 @@ func (m *Migrate) MigrateStore() error {
 		downloadedPath, err := m.sourceStore.Download(m.fileCollectionName, file)
 		if err != nil {
 			if errors.Is(err, store.ErrNotFound) || m.skipErrors {
-				m.debugLog(fmt.Sprintf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name))
-				err = nil
+				logger(fmt.Sprintf("[%v/%v] Error downloading %s (skipping): %v\n", index, len(files), file.Name, err))
 				continue
-			} else {
-				return err
 			}
+			return err
 		}
 
 		if file.Rid == "" && m.storeName == "Uploads" {
@@ -308,13 +306,11 @@ func (m *Migrate) DownloadAll() error {
 		}
 
 		if _, err := m.sourceStore.Download(m.fileCollectionName, file); err != nil {
-			if err == store.ErrNotFound || m.skipErrors {
-				fmt.Printf("[%v/%v] No corresponding file for %s Skipping\n", index, len(files), file.Name)
-				err = nil
+			if errors.Is(err, store.ErrNotFound) || m.skipErrors {
+				logger(fmt.Sprintf("[%v/%v] Error downloading %s (skipping): %v\n", index, len(files), file.Name, err))
 				continue
-			} else {
-				return err
 			}
+			return err
 		}
 
 		m.debugLog(fmt.Sprintf("[%v/%v] Downloaded %s from: %s\n", index, len(files), file.Name, m.sourceStore.StoreType()))
